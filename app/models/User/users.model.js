@@ -1,5 +1,6 @@
 import pool from "../../../configs/database/database.js";
 import {
+  compareHash,
   decryptAES,
   encryptAES,
   generateId,
@@ -29,55 +30,71 @@ class Users {
         user_id,
         this.user_name,
         this.user_email,
-        this.user_password,
+        await hashString(this.user_password),
         this.user_status,
         this.user_role,
         this.type_account || "register",
       ]);
       return result.affectedRows ? user_id : null;
     } catch (error) {
-      console.error("Database error:", error); // Ghi log lỗi để dễ debug
+      console.error("Database error:", error); 
       return false;
     }
   }
 
   // tìm người dùng
-  static async login(user_email, user_password, type_account) {
+  static async login(email, password, type_account) {
     try {
-      const findUserQuery =
-        "SELECT * FROM users WHERE user_email = ? and user_password = ? and type_account = ?";
-      const [rows] = await pool.execute(findUserQuery, [
-        user_email,
-        user_password,
-        type_account,
-      ]);
-      console.log(rows[0]);
+        const getUserQuery = "SELECT * FROM Users WHERE user_email = ? AND type_account = ?";
+        const [result] = await pool.execute(getUserQuery, [
+            email,
+            type_account
+        ]);
+        if (result.length === 0) {
+            return false;
+        }
 
-      return rows.length > 0 ? rows[0] : null; // Trả về thông tin người dùng nếu tìm thấy
+        const user = result[0];
+        const isPasswordValid = compareHash(password, user.user_password);
+        return isPasswordValid ? user : false;
     } catch (error) {
-      console.error("Database error:", error);
-      return null;
+        console.log(error.message);
+        return error;
     }
-  }
-  static async loginWithUserID(userID, password, type_account) {
-    console.log("userID: ", userID);
-    console.log("password: ", password);
-    console.log("type_account: ", type_account);
-
+}
+  
+  async updatePassword(newPassword) {
     try {
-      const getUserQuery =
-        "SELECT * FROM Users WHERE user_id = ? AND type_account = ? and user_password = ?";
-      const [rows] = await pool.execute(getUserQuery, [
-        userID,
-        type_account,
-        password,
-      ]);
-      return rows.length > 0 ? rows[0] : null; // Trả về thông tin người dùng nếu tìm thấy
+        const updatePasswordQuery = "UPDATE Users SET user_password = ? WHERE user_email = ?";
+        const [result] = await pool.execute(updatePasswordQuery, [
+            await hashString(newPassword),
+            this.user_email
+        ]);
+        return result.affectedRows;
     } catch (error) {
+        console.log(error.message);
+        return error;
+    }
+}
+static async loginWithUserID(userID, password, type_account) {
+  try {
+      const getUserQuery = "SELECT * FROM Users WHERE user_id = ? AND type_account = ?" ;
+      const [result] = await pool.execute(getUserQuery, [
+          userID, 
+          type_account
+      ]);
+      if (result.length === 0) {
+          return false;
+      }
+
+      const user = result[0];
+      const isPasswordValid = compareHash(password, user.user_password);
+      return isPasswordValid ? user : false;
+  } catch (error) {
       console.log(error.message);
       return error;
-    }
   }
+}
   // tìm người dùng theo id
   static async getById(user_id) {
     try {

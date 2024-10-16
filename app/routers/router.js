@@ -4,6 +4,7 @@ import UserRouter from "./User/user.router.js";
 import MessageRouter from "./Message/message.router.js";
 import express from 'express';
 import PostRouter from "./Post/post.router.js";
+import EmailOTPRouter from "./Email/email_otp.router.js";
 
 export default function RouterMain(app) {
   app.use("/users", UserRouter(express.Router()));
@@ -11,6 +12,6 @@ export default function RouterMain(app) {
   app.use("/friends", FriendRouter(express.Router()));
   app.use("/messages", MessageRouter(express.Router()));
   app.use("/token", TokenRouter(express.Router()));
-
+  app.use('/otp', EmailOTPRouter(express.Router()));
   return app;
 }

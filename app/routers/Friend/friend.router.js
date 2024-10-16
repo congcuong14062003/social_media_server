@@ -5,6 +5,7 @@ import {
   checkFriend,
   checkFriendRequest,
   findAllFriend,
+  findAllFriendByUserId,
   findAllFriendSuggest,
   findAllInvitedFriendSuggest,
   ListFriendInvite,
@@ -15,6 +16,7 @@ import express from "express";
 const router = express.Router();
 export default function FriendRouter() {
   router.get("/list-friends", Authentication, Authorization, findAllFriend);
+  router.get("/list-friend-user/:id", findAllFriendByUserId);
   router.get("/list-friends-suggest", Authentication, Authorization, findAllFriendSuggest);
   router.get("/list-invited-friends-suggest", Authentication, Authorization, findAllInvitedFriendSuggest);
 

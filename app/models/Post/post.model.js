@@ -79,6 +79,33 @@ ORDER BY
       throw error;
     }
   }
+  static async getAllPostsById(user_id) {
+    const query = `
+        SELECT 
+            p.post_id, 
+            p.user_id, 
+            p.post_text, 
+            p.post_privacy, 
+            p.react_emoji, 
+            p.created_at, 
+            pm.media_link, 
+            pm.media_type 
+        FROM 
+            Post p 
+        LEFT JOIN 
+            PostMedia pm ON p.post_id = pm.post_id 
+        WHERE 
+            p.user_id = ?;
+    `;
+
+    try {
+      const [results] = await pool.execute(query, [user_id]);
+      return results;
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      throw error;
+    }
+  }
 }
 
 export default Post;

@@ -21,7 +21,6 @@ const initializeSocket = (httpServer, users) => {
         console.log(
           `${data?.user_id} has connected with socket ID: ${socket.id}`
         );
-
         // Gửi danh sách online hiện tại cho tất cả người dùng
         io.emit("onlineUsers", getAllOnlineUsers(users));
       });
@@ -71,7 +70,6 @@ const initializeSocket = (httpServer, users) => {
           console.error(`No socket found for user ID: ${data?.sender_id}`);
         }
       });
-      // Lắng nghe sự kiện kết thúc cuộc gọi
       // Lắng nghe sự kiện kết thúc cuộc gọi
       socket.on("endCall", (data) => {
         const { room_id, receiver_id, sender_id } = data;
@@ -127,6 +125,14 @@ const initializeSocket = (httpServer, users) => {
         // Cập nhật danh sách online cho tất cả người dùng
         io.emit("onlineUsers", getAllOnlineUsers(users));
         socket.broadcast.emit("callEnded"); // Phát sự kiện khi kết nối bị ngắt
+      });
+
+      // Lắng nghe sự kiện gửi bình luận
+      socket.on("sendComment", (data) => {
+        // Phát sự kiện bình luận mới đến tất cả client
+        console.log("data comment: ", data);
+        
+        io.emit("newComment", data);
       });
     });
   }

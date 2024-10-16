@@ -49,4 +49,40 @@ const listPost = async (req, res) => {
   }
 }
 
-export { createPost ,listPost};
+const listPostById = async (req, res) => {
+  const user_id = req.params.id;
+  try {
+    const posts = await Post.getAllPostsById(user_id); // Call the model method to get posts
+    if (posts.length > 0) {
+      res.status(200).json({ status: true, data: posts });
+    } else {
+      res.status(404).json({ status: false});
+    }
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({
+      status: false,
+      message: "An error occurred, please try again later",
+    });
+  }
+}
+
+const createCommentPostById = async (req, res) => {
+  const user_id = req.params.id;
+  try {
+    const posts = await Post.getAllPostsById(user_id); // Call the model method to get posts
+    if (posts.length > 0) {
+      res.status(200).json({ status: true, data: posts });
+    } else {
+      res.status(404).json({ status: false});
+    }
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({
+      status: false,
+      message: "An error occurred, please try again later",
+    });
+  }
+}
+
+export { createPost ,listPost, listPostById};

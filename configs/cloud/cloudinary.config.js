@@ -10,15 +10,11 @@ cloudinary.config({
 // Define the uploadFile function
 const uploadFile = async (file, folder) => {
     try {
-        // Set up transformation options
+        // Set up options for upload
         const options = {
             folder: folder,
-            resource_type: 'auto',
-            transformation: [
-                { width: 1000, crop: "scale" },
-                { quality: "auto" },
-                { fetch_format: "auto" }
-            ]
+            resource_type: 'auto'
+            // No transformation options to keep original size
         };
 
         // Upload file to Cloudinary using buffer
@@ -34,7 +30,6 @@ const uploadFile = async (file, folder) => {
             // Converting buffer to stream and piping to Cloudinary
             require('stream').Readable.from(file.buffer).pipe(uploadStream);
         });
-
 
         return {
             url: result.secure_url,

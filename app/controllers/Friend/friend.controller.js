@@ -24,6 +24,29 @@ const findAllFriend = async (req, res) => {
       .json({ status: 500, message: "Đã xảy ra lỗi, vui lòng thử lại sau" });
   }
 };
+// tất cả bạn bè theo id người dùng
+const findAllFriendByUserId = async (req, res) => {
+  try {
+    // console.log(req.body);
+    const user_id = req.params.id;
+
+    const user = await Friend.getAllFriends(user_id);
+
+    if (user) {
+      console.log("có user");
+
+      res.status(200).json({ status: true, users: user });
+    } else {
+      res.status(401).json({ status: false });
+    }
+  } catch (error) {
+    console.log(error);
+    res
+      .status(500)
+      .json({ status: 500, message: "Đã xảy ra lỗi, vui lòng thử lại sau" });
+  }
+};
+
 // tất cả bạn bè gợi ý
 const findAllFriendSuggest = async (req, res) => {
   try {
@@ -214,6 +237,7 @@ const cancelFriendRequest = async (req, res) => {
 };
 export {
   findAllFriend,
+  findAllFriendByUserId,
   findAllFriendSuggest,
   findAllInvitedFriendSuggest,
   addFriend,

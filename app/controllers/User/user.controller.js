@@ -104,7 +104,26 @@ const userLogin = async (req, res) => {
       .json({ status: 500, message: "Đã xảy ra lỗi, vui lòng thử lại sau" });
   }
 };
-
+// cập nhật mật khẩu
+const updateUserPassword = async (req, res) => {
+  try {
+      console.log(req.body);
+      const { user_password, user_email } = req.body;
+      console.log(user_email, user_password);
+      const user = new Users({ user_email: user_email });
+      console.log("User: ", user);
+      const result = await user.updatePassword(user_password);
+      console.log(result);
+      if (result > 0) {
+          res.status(200).json({ status: true, message: 'Mật khẩu đã được cập nhật' });
+      } else {
+          res.status(400).json({ status: false, message: 'Lỗi khi cập nhật mật khẩu' });
+      }
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ status: false, message: error.message ?? error });
+  }
+};
 // đăng xuất
 async function userLogout(req, res) {
   try {
@@ -296,4 +315,5 @@ export {
   getInfoProfileUser,
   getUserById,
   createUsersBySocialAccount,
+  updateUserPassword
 };

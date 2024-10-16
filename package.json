@@ -25,6 +25,7 @@
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.10.2",
+    "nodemailer": "^6.9.15",
     "peer": "^1.0.2",
     "peerjs": "^1.5.4",
     "socket.io": "^4.7.5"
