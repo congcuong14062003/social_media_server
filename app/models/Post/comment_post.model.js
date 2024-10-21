@@ -28,23 +28,31 @@ class PostComment {
 
   static async getCommentsWithSubComments(post_id) {
     try {
-        const query = `
+      const query = `
+            WITH LatestProfileMedia AS (
+                SELECT 
+                    user_id, 
+                    media_link, 
+                    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
+                FROM ProfileMedia
+                WHERE media_type = 'avatar'
+            )
             SELECT 
                 c.comment_id, 
                 c.post_id, 
                 c.commenting_user_id, 
                 c.comment_text, 
                 c.media_link,
-                c.created_at AS comment_created_at,  -- Thêm created_at cho bình luận
+                c.created_at AS comment_created_at,
                 u.user_name AS commenting_user_name,
                 pm.media_link AS avatar,
                 sc.sub_comment_id, 
                 sc.replying_user_id, 
                 sc.comment_text AS sub_comment_text, 
                 sc.media_link AS sub_media_link,
-                sc.created_at AS sub_comment_created_at,  -- Thêm created_at cho sub-comment
+                sc.created_at AS sub_comment_created_at,
                 su.user_name AS replying_user_name,
-                pm_sub.media_link AS replying_user_avatar
+                la.media_link AS replying_user_avatar
             FROM PostComment c
             LEFT JOIN users u ON c.commenting_user_id = u.user_id
             LEFT JOIN ProfileMedia pm ON c.commenting_user_id = pm.user_id 
@@ -52,74 +60,72 @@ class PostComment {
                 AND pm.created_at = (SELECT MAX(created_at) FROM ProfileMedia WHERE user_id = c.commenting_user_id)
             LEFT JOIN SubPostComment sc ON c.comment_id = sc.comment_id
             LEFT JOIN users su ON sc.replying_user_id = su.user_id
-            LEFT JOIN ProfileMedia pm_sub ON sc.replying_user_id = pm_sub.user_id 
-                AND pm_sub.media_type = 'avatar' 
-                AND pm_sub.created_at = (SELECT MAX(created_at) FROM ProfileMedia WHERE user_id = sc.replying_user_id)
+            LEFT JOIN LatestProfileMedia la ON sc.replying_user_id = la.user_id AND la.rn = 1
             WHERE c.post_id = ?
             ORDER BY c.created_at DESC, sc.created_at ASC;
         `;
 
-        const [rows] = await pool.execute(query, [post_id]);
+      const [rows] = await pool.execute(query, [post_id]);
+      console.log("dữ liệu comment: ", rows);
 
-        // Xử lý dữ liệu để lồng sub-comments vào từng comment cấp 1
-        const commentsMap = {};
+      // Tổ chức dữ liệu để lồng sub-comments vào từng comment cấp 1
+      const commentsMap = {};
 
-        rows.forEach((row) => {
-            const {
-                comment_id,
-                post_id,
-                commenting_user_id,
-                comment_text,
-                media_link,
-                comment_created_at,  // Nhận created_at cho bình luận
-                commenting_user_name,
-                avatar,
-                sub_comment_id,
-                replying_user_id,
-                sub_comment_text,
-                sub_media_link,
-                sub_comment_created_at,  // Nhận created_at cho sub-comment
-                replying_user_name,
-                replying_user_avatar,
-            } = row;
+      rows.forEach((row) => {
+        const {
+          comment_id,
+          post_id,
+          commenting_user_id,
+          comment_text,
+          media_link,
+          comment_created_at,
+          commenting_user_name,
+          avatar,
+          sub_comment_id,
+          replying_user_id,
+          sub_comment_text,
+          sub_media_link,
+          sub_comment_created_at,
+          replying_user_name,
+          replying_user_avatar,
+        } = row;
 
-            // Nếu comment chưa tồn tại trong commentsMap, khởi tạo nó
-            if (!commentsMap[comment_id]) {
-                commentsMap[comment_id] = {
-                    comment_id,
-                    post_id,
-                    commenting_user_id,
-                    comment_text,
-                    media_link,
-                    created_at: comment_created_at, // Lưu created_at
-                    commenting_user_name,
-                    avatar,
-                    sub_comments: [],
-                };
-            }
+        // Nếu comment chưa tồn tại trong commentsMap, khởi tạo nó
+        if (!commentsMap[comment_id]) {
+          commentsMap[comment_id] = {
+            comment_id,
+            post_id,
+            commenting_user_id,
+            comment_text,
+            media_link,
+            created_at: comment_created_at,
+            commenting_user_name,
+            avatar,
+            sub_comments: [],
+          };
+        }
 
-            // Nếu có sub-comment, thêm vào mảng sub_comments
-            if (sub_comment_id) {
-                commentsMap[comment_id].sub_comments.push({
-                    sub_comment_id,
-                    replying_user_id,
-                    comment_text: sub_comment_text,
-                    media_link: sub_media_link,
-                    created_at: sub_comment_created_at, // Lưu created_at cho sub-comment
-                    replying_user_name,
-                    replying_user_avatar,
-                });
-            }
-        });
+        // Nếu có sub-comment, thêm vào mảng sub_comments
+        if (sub_comment_id) {
+          commentsMap[comment_id].sub_comments.push({
+            sub_comment_id,
+            replying_user_id,
+            comment_text: sub_comment_text,
+            media_link: sub_media_link,
+            created_at: sub_comment_created_at,
+            replying_user_name,
+            replying_user_avatar,
+          });
+        }
+      });
 
-        // Chuyển từ object map thành array
-        return Object.values(commentsMap);
+      // Chuyển từ object map thành array
+      return Object.values(commentsMap);
     } catch (error) {
-        console.error("Error fetching comments with sub-comments:", error);
-        throw error;
+      console.error("Error fetching comments with sub-comments:", error);
+      throw error;
     }
-}
-
+  }
 }
 
 export default PostComment;

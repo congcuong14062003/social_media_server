@@ -118,22 +118,27 @@ const initializeSocket = (httpServer, users) => {
         // Cập nhật danh sách online cho tất cả người dùng
         io.emit("onlineUsers", getAllOnlineUsers(users));
       });
-      // Xử lý sự kiện ngắt kết nối
-      socket.on("disconnect", () => {
-        console.log("User disconnected:", socket.id);
-        removeUser(socket.id, users);
-        // Cập nhật danh sách online cho tất cả người dùng
-        io.emit("onlineUsers", getAllOnlineUsers(users));
-        socket.broadcast.emit("callEnded"); // Phát sự kiện khi kết nối bị ngắt
-      });
 
-      // Lắng nghe sự kiện gửi bình luận
-      socket.on("sendComment", (data) => {
-        // Phát sự kiện bình luận mới đến tất cả client
-        console.log("data comment: ", data);
-        
-        io.emit("newComment", data);
+      //T  cuộc gọi
+      socket.on("statusCall", (data) => {
+        const receiverSocketId = getSocketIdByUserId(data?.to, users);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("statusCallToUser", {
+            isCallRemoteAccepted: data.isCallAccepted,
+            isVideoRemoteMuted: data?.isVideoMuted,
+            isAudioRemoteMuted: data?.isAudioMuted,
+          });
+        } else {
+          console.error(`No socket found for user ID: ${data?.sender_id}`);
+        }
       });
+      // Lắng nghe sự kiện gửi bình luận
+      // socket.on("sendComment", (data) => {
+      //   // Phát sự kiện bình luận mới đến tất cả client
+      //   console.log("data comment: ", data);
+        
+      //   io.emit("newComment", data);
+      // });
     });
   }
 
