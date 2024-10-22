@@ -1,6 +1,7 @@
 import uploadFile from "../../../configs/cloud/cloudinary.config";
 import Post from "../../models/Post/post.model";
 import PostMedia from "../../models/Post/post_media.model";
+import PostReact from "../../models/Post/post_react.model";
 import { Users } from "../../models/User/users.model";
 
 // tạo bài viết
@@ -40,7 +41,7 @@ const createPost = async (req, res) => {
       for (const file of files) {
         const mediaUrl = await uploadFile(
           file,
-          process.env.NAME_FOLDER_MESSENGER
+          process.env.NAME_FOLDER_POST
         );
 
         // Kiểm tra mediaUrl
@@ -137,8 +138,11 @@ const listPost = async (req, res) => {
     // Lấy tất cả media cho từng bài viết
     const mediaPromises = posts.map(async (post) => {
       const media = await PostMedia.getAllMediaByPostId(post.post_id);
+      const reacts = await PostReact.getAllReactByPost(post?.post_id);
+
       return {
         ...post, // Spread thông tin từ bài viết
+        reacts,
         media, // Thêm media vào bài viết
       };
     });
@@ -147,7 +151,10 @@ const listPost = async (req, res) => {
     const postsWithMedia = await Promise.all(mediaPromises);
 
     // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media
-    res.status(200).json({ status: true, data: postsWithMedia });
+    res.status(200).json({
+      status: true,
+      data: postsWithMedia,
+    });
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({
@@ -171,9 +178,7 @@ const listPostById = async (req, res) => {
 
     // Nếu không có bài viết nào thỏa mãn điều kiện, trả về phản hồi 404
     if (filteredPosts.length === 0) {
-      return res
-        .status(404)
-        .json({ status: false });
+      return res.status(404).json({ status: false });
     }
 
     // Lấy tất cả media cho từng bài viết
@@ -217,4 +222,23 @@ const createCommentPostById = async (req, res) => {
   }
 };
 
-export { createPost, listPost, listPostById, deletePost };
+const deleteReactByUserID = async (req, res) => {
+  const user_id = req.body?.data?.user_id;
+  const post_id = req.params.id;
+  try {
+    const posts = await PostReact.deleteReact(user_id, post_id); // Call the model method to get posts
+    if (posts) {
+      res.status(200).json({ status: true });
+    } else {
+      res.status(404).json({ status: false });
+    }
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    res.status(500).json({
+      status: false,
+      message: "An error occurred, please try again later",
+    });
+  }
+};
+
+export { createPost, listPost, listPostById, deletePost, deleteReactByUserID };

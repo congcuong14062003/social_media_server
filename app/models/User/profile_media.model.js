@@ -24,7 +24,24 @@ class ProfileMedia {
             return error;
         }
     }
+    static async getLatestAvatarById(user_id) {
+        try {
+            const getProfileMediaByIdQuery = "SELECT * FROM ProfileMedia WHERE user_id = ? AND media_type = 'avatar'";
+            const [result] = await pool.execute(getProfileMediaByIdQuery, [user_id]);
 
+            if (result.length === 0) {
+                return null; // Không tìm thấy avatar
+            }
+
+            // Sắp xếp theo ngày tạo và lấy avatar mới nhất
+            const latestAvatar = result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+            return latestAvatar.media_link; // Trả về đường dẫn của avatar mới nhất
+        } catch (error) {
+            console.error('Error fetching latest avatar by user ID:', error);
+            throw error; // Ném lỗi để xử lý ở nơi khác
+        }
+    }
     static async getById(user_id) {
         try {
             const getProfileMediaByIdQuery = "SELECT * FROM ProfileMedia WHERE user_id = ?";
