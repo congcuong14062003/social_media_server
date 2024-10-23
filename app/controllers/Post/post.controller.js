@@ -165,8 +165,8 @@ const listPost = async (req, res) => {
 };
 
 const listPostById = async (req, res) => {
-  const my_id = req.body?.data?.user_id ?? null;
-  const user_id = req.params.id;
+  const my_id = req.body?.data?.user_id ?? null; // Lấy user_id từ request body
+  const user_id = req.params.id; // Lấy user_id từ params của request
   try {
     const posts = await Post.getAllPostsById(user_id); // Gọi phương thức model để lấy bài viết
 
@@ -181,20 +181,23 @@ const listPostById = async (req, res) => {
       return res.status(404).json({ status: false });
     }
 
-    // Lấy tất cả media cho từng bài viết
-    const mediaPromises = filteredPosts.map(async (post) => {
-      const media = await PostMedia.getAllMediaByPostId(post.post_id);
+    // Lấy tất cả media và reacts cho từng bài viết
+    const mediaAndReactPromises = filteredPosts.map(async (post) => {
+      const media = await PostMedia.getAllMediaByPostId(post.post_id); // Lấy media cho bài viết
+      const reacts = await PostReact.getAllReactByPost(post.post_id); // Lấy reacts cho bài viết
+
       return {
         ...post, // Spread thông tin từ bài viết
         media, // Thêm media vào bài viết
+        reacts, // Thêm reacts vào bài viết
       };
     });
 
-    // Đợi tất cả các promise media hoàn thành
-    const postsWithMedia = await Promise.all(mediaPromises);
+    // Đợi tất cả các promise media và reacts hoàn thành
+    const postsWithMediaAndReact = await Promise.all(mediaAndReactPromises);
 
-    // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media
-    res.status(200).json({ status: true, data: postsWithMedia });
+    // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media và reacts
+    res.status(200).json({ status: true, data: postsWithMediaAndReact });
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({
@@ -203,6 +206,7 @@ const listPostById = async (req, res) => {
     });
   }
 };
+
 
 const createCommentPostById = async (req, res) => {
   const user_id = req.params.id;

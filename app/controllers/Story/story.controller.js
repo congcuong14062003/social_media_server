@@ -40,12 +40,14 @@ const listStory = async (req, res) => {
     const storiesWithUserInfo = await Promise.all(
       publicStories.map(async (story) => {
         const profileUser = await Users.getById(story.user_id);
-        const user_avatar = await ProfileMedia.getLatestAvatarById(story.user_id); // Gọi hàm để lấy avatar mới nhất
-        
-        
+        const user_avatar = await ProfileMedia.getLatestAvatarById(
+          story.user_id
+        ); // Gọi hàm để lấy avatar mới nhất
+
         return {
           story_id: story.story_id,
           media_link: story.media_link,
+          created_at: story.created_at,
           user_id: story.user_id,
           user_name: profileUser.user_name, // Tên người dùng
           user_avatar: user_avatar, // Avatar của người dùng
@@ -66,6 +68,60 @@ const listStory = async (req, res) => {
     });
   }
 };
+// Lấy story theo ID
+const storyById = async (req, res) => {
+  try {
+    const story_id = req.params.id; // Lấy ID story từ params
+    const story = await Story.getStoryById(story_id);
 
+    if (!story) {
+      return res.status(404).json({
+        status: false,
+        message: "Không tìm thấy story",
+      });
+    }
 
-export { createStory, listStory };
+    console.log("story: ", story);
+
+    const user_id = story?.user_id;
+    console.log("user_id: ", user_id);
+
+    // Kiểm tra nếu user_id không hợp lệ
+    if (!user_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Không thể lấy thông tin người dùng cho story này",
+      });
+    }
+
+    // Lấy thông tin người dùng và avatar liên quan đến story
+    const profileUser = await Users.getById(user_id);
+    const user_avatar = await ProfileMedia.getLatestAvatarById(user_id);
+
+    console.log("profileUser:", profileUser);
+    console.log("user_avatar: ", user_avatar);
+
+    const storyWithUserInfo = {
+      story_id: story.story_id,
+      media_link: story.media_link,
+      created_at: story.created_at,
+      user_id: story.user_id,
+      user_name: profileUser?.user_name || "Unknown",
+      user_avatar: user_avatar || null,
+      story_privacy: story.story_privacy,
+    };
+
+    res.status(200).json({
+      status: true,
+      story: storyWithUserInfo,
+    });
+  } catch (error) {
+    console.error("Lỗi khi lấy story theo ID:", error);
+    res.status(500).json({
+      status: false,
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau",
+    });
+  }
+};
+
+export { createStory, listStory, storyById };

@@ -7,12 +7,13 @@ import Authentication from "../../middleware/authentication.js";
 import { Authorization } from "../../middleware/authorization_token.js";
 import express from "express";
 import { createReactPostById } from "../../controllers/Post/heart_post.controller.js";
-import { createStory, listStory } from "../../controllers/Story/story.controller.js";
+import { createStory, listStory, storyById } from "../../controllers/Story/story.controller.js";
 const router = express.Router();
 const storage = multer.memoryStorage(); // Bạn có thể thay đổi sang multer.diskStorage() nếu cần
 const upload = multer({ storage });
 export default function StoryRouter() {
   router.post("/create-story",upload.array("content", 1), Authentication, Authorization, createStory);
   router.get("/list-story", Authentication, Authorization, listStory);
+  router.get("/story-by-id/:id", Authentication, Authorization, storyById);
   return router;
 }

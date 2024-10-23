@@ -48,6 +48,18 @@ class Story {
       throw error;
     }
   }
+  static async getStoryById(id_story) {
+    const query = `
+      SELECT * FROM story where story_id = ?
+    `;
+    try {
+      const [results] = await pool.execute(query, [id_story]);
+      return results[0];
+    } catch (error) {
+      console.error("Error fetching stories:", error);
+      throw error;
+    }
+  }
 }
 
 export default Story;
