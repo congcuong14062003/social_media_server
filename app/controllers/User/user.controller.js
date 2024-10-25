@@ -107,13 +107,9 @@ const userLogin = async (req, res) => {
 // cập nhật mật khẩu
 const updateUserPassword = async (req, res) => {
   try {
-      console.log(req.body);
       const { user_password, user_email } = req.body;
-      console.log(user_email, user_password);
       const user = new Users({ user_email: user_email });
-      console.log("User: ", user);
       const result = await user.updatePassword(user_password);
-      console.log(result);
       if (result > 0) {
           res.status(200).json({ status: true, message: 'Mật khẩu đã được cập nhật' });
       } else {
@@ -147,9 +143,7 @@ async function userLogout(req, res) {
 const findAllUser = async (req, res) => {
   try {
     const user_id = req.body?.data?.user_id;
-    console.log("user_id: ", user_id);
     const data = await Users.getAllUser(user_id);
-    console.log("data: ", data);
     if (data) {
       res.status(200).json({ status: true, users: data });
     } else {
@@ -228,10 +222,6 @@ export async function uploadInfoProfileUser(req, res) {
     const id = req.body?.data?.user_id;
     const { avatar, cover } = req.files || {}; // Sử dụng || {} để đảm bảo không gặp lỗi nếu req.files không tồn tại
     const dataUpdate = req.body;
-    console.log("id: ", id);
-    console.log("avatar: ", avatar);
-    console.log("cover: ", cover);
-    console.log("dataUpdate: ", dataUpdate);
 
     // // Khởi tạo các đối tượng từ lớp tương ứng
     const user = new Users({ user_id: id, ...dataUpdate });
@@ -261,7 +251,6 @@ export async function uploadInfoProfileUser(req, res) {
         process.env.NAME_FOLDER_USER_COVER
       ),
     ]);
-    console.log("results: ", results);
 
     // // Kiểm tra kết quả cập nhật
     const allRowsAffected =
@@ -269,7 +258,6 @@ export async function uploadInfoProfileUser(req, res) {
       (results[2] === null || results[2] === 1) && // Kiểm tra kết quả upload avatar (nếu có)
       (results[3] === null || results[3] === 1); // Kiểm tra kết quả upload cover (nếu có)
 
-    console.log("allRowsAffected: ", allRowsAffected);
 
     if (!allRowsAffected) {
       return res.status(400).json({

@@ -5,8 +5,6 @@ import { Users } from "../../models/User/users.model";
 const createOTPEmail = async (req, res) => {
     try {
         const data = req.body;
-        console.log("Dataaaaa: ", data);
-        
         if (!(await Users.checkEmailExists(data?.user_email))) {
             const otp = new EmailOTP(data);
             await otp.create("code");

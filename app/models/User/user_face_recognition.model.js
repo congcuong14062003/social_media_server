@@ -8,7 +8,6 @@ class UserFaceData {
 
     async create() {
         try {
-            console.log(this);
             
             const createUserFaceDataQuery = "INSERT INTO UserFaceData (user_id_encode, media_link) VALUES (?, ?);"
             const [result] = await pool.execute(createUserFaceDataQuery, [
@@ -46,8 +45,6 @@ class UserFaceData {
 
     static async delete(user_id_encode) {
         try {
-            console.log(user_id_encode);
-            
             const deleteUserFaceDataQuery = "DELETE FROM UserFaceData WHERE user_id_encode = ?";
             const [result] = await pool.execute(deleteUserFaceDataQuery, [
                 user_id_encode

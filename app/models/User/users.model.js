@@ -141,8 +141,6 @@ static async loginWithUserID(userID, password, type_account) {
   }
 
   async update() {
-    console.log("Cập nhật người dùng với dữ liệu:", this);
-
     try {
       let updateUserQuery = "UPDATE Users SET";
       let params = [];
@@ -168,7 +166,6 @@ static async loginWithUserID(userID, password, type_account) {
       params.push(this.user_id);
 
       const [result] = await pool.execute(updateUserQuery, params);
-      console.log("Kết quả cập nhật người dùng:", result);
 
       return result.affectedRows;
     } catch (error) {
@@ -186,8 +183,6 @@ class UserKeyPair extends Users {
   }
 
   static async generateKeyPair(user_id, code) {
-    console.log("user_id", user_id);
-    console.log("code_new", code);
 
     try {
       const existingKeyPair = await this.getKeyPair(user_id);
@@ -199,7 +194,6 @@ class UserKeyPair extends Users {
           privateKeyEncoding: { type: "pkcs8", format: "pem" },
         });
 
-        console.log("Khoá bí mật: ", privateKey);
         const privateKeyEncode = encryptAES(privateKey, code);
         const createKeyPairQuery =
           "INSERT INTO userkeypair (user_id, public_key, private_key_encode) VALUES(?,?,?)";
@@ -230,7 +224,6 @@ class UserKeyPair extends Users {
       if (rows.length > 0) {
         return rows[0];
       } else {
-        console.log("No key pair found for user_id:", user_id);
         return null;
       }
     } catch (error) {
@@ -242,14 +235,10 @@ class UserKeyPair extends Users {
   static async checkPrivateKey(user_id, code) {
     try {
       const keyPair = await this.getKeyPair(user_id);
-      console.log("user_id: ", user_id);
-      console.log("code: ", code);
 
-      console.log("có key pair", keyPair);
 
       if (keyPair) {
         const privateKeyDecode = decryptAES(keyPair.private_key_encode, code);
-        console.log("Key pair: ", privateKeyDecode);
 
         if (privateKeyDecode !== null) {
           return {

@@ -19,11 +19,9 @@ export default async function Authentication(req, res, next) {
 
     const { user_email, user_password, user_id_login, user_id_encode, type_account } =
       req.body;
-    console.log({ user_email, user_password, user_id_login, user_id_encode, type_account });
 
     //login với email và password
     if (user_email && user_password) {
-      console.log("Vào 1");
       
       const infoUser = await Users.login(user_email, user_password,type_account);
       if (!infoUser?.user_id) {
@@ -32,14 +30,12 @@ export default async function Authentication(req, res, next) {
       await handleTokenGeneration(req, res, next, infoUser);
 
     } else if (user_id_login) {
-      console.log("Vào 2");
       // Đăng nhập bằng social network
       const infoUser = await Users.loginWithUserID(
         user_id_login,
         user_password,
         type_account
       );
-      console.log("Info user: ", infoUser);
       
       if (!infoUser?.user_id) {
         throw new Error("Thông tin người dùng không hợp lệ");

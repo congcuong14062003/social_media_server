@@ -183,7 +183,6 @@ ORDER BY pm.created_at DESC;
           AND f.relationship_status = 0  -- Chỉ lấy những lời mời đang chờ
       `;
       const [rows] = await pool.execute(list_inviting, [id_user]);
-      console.log("Danh sách gửi lời mời: ", rows);
       return rows.length > 0 ? rows : null;
     } catch (error) {
       console.error("Database error:", error);

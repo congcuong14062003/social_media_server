@@ -1,7 +1,7 @@
 
 import multer from "multer";
 import { createCommentPostById, listCommentByPost } from "../../controllers/Post/comment_post.controller.js";
-import { createPost, deletePost, deleteReactByUserID, listPost, listPostById } from "../../controllers/Post/post.controller.js";
+import { createPost, deletePost, deleteReactByUserID, editPost, listPost, listPostById } from "../../controllers/Post/post.controller.js";
 import { createSubCommentByCommentId } from "../../controllers/Post/sub_comment_post.controller.js";
 import Authentication from "../../middleware/authentication.js";
 import { Authorization } from "../../middleware/authorization_token.js";
@@ -13,6 +13,7 @@ const upload = multer({ storage });
 export default function PostRouter() {
   router.post("/create-post",upload.array("file", 10), Authentication, Authorization, createPost);
   router.delete("/delete-post/:id", Authentication, Authorization, deletePost);
+  router.post("/edit-post/:id",upload.array("file", 10), Authentication, Authorization, editPost);
   router.get("/list-post",Authentication, Authorization, listPost);
   router.get("/list-post-by-user/:id",Authentication, Authorization, listPostById);
   router.post("/create-comment-post/:id",Authentication, Authorization, createCommentPostById);

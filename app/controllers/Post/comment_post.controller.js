@@ -5,7 +5,6 @@ const createCommentPostById = async (req, res) => {
   const post_id = req.params.id;
   const { commenting_user_id, comment_text, media_link } = req.body;
 
-  console.log("Request body:", req.body);
 
   if (!commenting_user_id || !comment_text) {
     return res.status(400).json({ status: false, message: "Missing required fields" });

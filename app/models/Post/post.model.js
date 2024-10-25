@@ -3,7 +3,6 @@ import { generateId } from "../../ultils/crypto.js";
 
 class Post {
   constructor(data) {
-    console.log("dataaaaaaaa: ", data);
     this.post_id = data.post_id;
     this.user_id = data.user_id;
     this.post_privacy = data.post_privacy;
@@ -34,6 +33,26 @@ class Post {
       return false; // Trả về false nếu không có dòng nào bị ảnh hưởng
     } catch (error) {
       console.error("Lỗi khi thực hiện câu lệnh SQL:", error);
+      throw error;
+    }
+  }
+  async update() {
+    try {
+      const query = `
+        UPDATE Post 
+        SET post_privacy = ?, post_text = ?, react_emoji = ? 
+        WHERE post_id = ?;
+      `;
+      const [result] = await pool.execute(query, [
+        this.post_privacy,
+        this.post_text,
+        this.react_emoji,
+        this.post_id,
+      ]);
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error("Lỗi khi cập nhật bài viết:", error);
       throw error;
     }
   }

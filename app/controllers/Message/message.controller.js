@@ -24,8 +24,6 @@ const createMessage = async (req, res) => {
     //     message: "Bạn bè chưa thiết lập tin nhắn vui lòng thử lại sau",
     //   });
     // }
-    console.log("sender_id: ", user_id);
-    console.log("receiver_id: ", friend_id);
     if (files.length > 0) {
       content_text = (
         await uploadFile(files[0], process.env.NAME_FOLDER_MESSENGER)
@@ -105,9 +103,6 @@ const getAllMessages = async (req, res) => {
     const user_id = req.body?.data?.user_id ?? null;
     const friend_id = req.params?.id ?? null;
     const private_key = req.body?.private_key ?? "";
-    console.log("user_id", user_id);
-    console.log("friend_id", friend_id);
-    console.log("private_key", private_key);
 
     if (!user_id || !friend_id || !private_key) {
       return res.status(400).json({ status: false });

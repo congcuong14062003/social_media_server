@@ -35,7 +35,6 @@ class PostReact {
 
     try {
       const [results] = await pool.execute(query, [post_id]); // Truyền my_id vào 2 lần
-      console.log(">>>>:", results);
 
       return results;
     } catch (error) {

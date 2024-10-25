@@ -56,7 +56,6 @@ class UserProfile {
   }
 
   async update() {
-    console.log("Cập nhật hồ sơ người dùng với dữ liệu:", this);
 
     try {
       let updateUserProfileQuery = "UPDATE UserProfile SET";
@@ -89,7 +88,6 @@ class UserProfile {
       params.push(this.user_id);
 
       const [result] = await pool.execute(updateUserProfileQuery, params);
-      console.log("Kết quả cập nhật hồ sơ người dùng:", result);
 
       return result.affectedRows;
     } catch (error) {

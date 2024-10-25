@@ -18,7 +18,7 @@ const createStory = async (req, res) => {
     await story.create();
     res
       .status(200)
-      .json({ status: true, message: "Story đã được tạo thành công" });
+      .json({ status: true });
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({
@@ -81,10 +81,10 @@ const storyById = async (req, res) => {
       });
     }
 
-    console.log("story: ", story);
+
 
     const user_id = story?.user_id;
-    console.log("user_id: ", user_id);
+
 
     // Kiểm tra nếu user_id không hợp lệ
     if (!user_id) {
@@ -97,14 +97,11 @@ const storyById = async (req, res) => {
     // Lấy thông tin người dùng và avatar liên quan đến story
     const profileUser = await Users.getById(user_id);
     const user_avatar = await ProfileMedia.getLatestAvatarById(user_id);
-
-    console.log("profileUser:", profileUser);
-    console.log("user_avatar: ", user_avatar);
-
     const storyWithUserInfo = {
       story_id: story.story_id,
       media_link: story.media_link,
       created_at: story.created_at,
+      heart_quantity: story.heart_quantity,
       user_id: story.user_id,
       user_name: profileUser?.user_name || "Unknown",
       user_avatar: user_avatar || null,
@@ -124,4 +121,22 @@ const storyById = async (req, res) => {
   }
 };
 
-export { createStory, listStory, storyById };
+// thả tym tin
+
+const createHeartStory = async (req, res) => {
+  try {
+    const story_id  = req.params.id;
+    const user_id = req.body?.data?.user_id;
+    const heart = await Story.likeStory(story_id)
+    res
+      .status(200)
+      .json({ status: true });
+  } catch (error) {
+    console.error("Lỗi khi tạo bài viết:", error);
+    res.status(500).json({
+      status: false,
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau",
+    });
+  }
+};
+export { createStory, listStory, storyById,createHeartStory };

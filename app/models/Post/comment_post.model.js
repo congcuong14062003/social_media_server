@@ -66,7 +66,6 @@ class PostComment {
         `;
 
       const [rows] = await pool.execute(query, [post_id]);
-      console.log("dữ liệu comment: ", rows);
 
       // Tổ chức dữ liệu để lồng sub-comments vào từng comment cấp 1
       const commentsMap = {};

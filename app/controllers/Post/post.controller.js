@@ -1,4 +1,5 @@
 import uploadFile from "../../../configs/cloud/cloudinary.config";
+import pool from "../../../configs/database/database";
 import Post from "../../models/Post/post.model";
 import PostMedia from "../../models/Post/post_media.model";
 import PostReact from "../../models/Post/post_react.model";
@@ -10,11 +11,6 @@ const createPost = async (req, res) => {
     const files = req.files || [];
     const { user_id, post_privacy, react_emoji } = req.body;
     let post_text = req.body?.post_text ?? "";
-
-    console.log("user_id: ", user_id);
-    console.log("post_privacy: ", post_privacy);
-    console.log("post_text: ", post_text);
-    console.log("files: ", files);
 
     // Tạo instance của Post
     const post = new Post({
@@ -32,17 +28,13 @@ const createPost = async (req, res) => {
         .status(400)
         .json({ status: false, message: "Không thể tạo bài viết" });
     }
-    console.log("Post iddddd: ", post); // post_id giờ sẽ có giá trị hợp lệ
 
     const postId = post.post_id; // Lấy post_id
 
     // Xử lý tải media nếu có tệp
     if (files.length > 0) {
       for (const file of files) {
-        const mediaUrl = await uploadFile(
-          file,
-          process.env.NAME_FOLDER_POST
-        );
+        const mediaUrl = await uploadFile(file, process.env.NAME_FOLDER_POST);
 
         // Kiểm tra mediaUrl
         if (!mediaUrl || !mediaUrl.url) {
@@ -96,10 +88,92 @@ const createPost = async (req, res) => {
     });
   }
 };
+// cập nhật bài viết
+const editPost = async (req, res) => {
+  try {
+    const files = req.files || [];
+    const post_id = req.params.id;
+    const { user_id, post_privacy, react_emoji, is_media_changed } = req.body;
+    let post_text = req.body?.post_text ?? "";
+
+    // Kiểm tra bài viết tồn tại không
+    const existingPost = await Post.getPostById(post_id);
+    if (!existingPost) {
+      return res
+        .status(404)
+        .json({ status: false, message: "Bài viết không tồn tại" });
+    }
+
+    // Tạo instance của Post
+    const post = new Post({
+      post_id,
+      user_id: existingPost.user_id, // Không cho phép thay đổi user_id
+      post_privacy: post_privacy ?? existingPost.post_privacy,
+      post_text: post_text ?? existingPost.post_text,
+      react_emoji: react_emoji ?? existingPost.react_emoji,
+    });
+
+    // Cập nhật bài viết
+    const updateResult = await post.update();
+    if (!updateResult) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Không thể cập nhật bài viết" });
+    }
+
+    // Xử lý media nếu có tệp tải lên mới
+    // if (files.length > 0) {
+    // Xóa media cũ liên quan đến bài viết
+    console.log(">>>>:", is_media_changed);
+    
+    if (is_media_changed == "true") {
+      console.log("123231232323");
+      
+      await pool.execute(`DELETE FROM PostMedia WHERE post_id = ?`, [post_id]);
+
+      for (const file of files) {
+        const mediaUrl = await uploadFile(file, process.env.NAME_FOLDER_POST);
+
+        if (!mediaUrl || !mediaUrl.url) {
+          console.error("Không thể tải lên media:", file.originalname);
+          continue; // Bỏ qua nếu media không tải được
+        }
+
+        const mediaType = file.mimetype.startsWith("image/")
+          ? "image"
+          : file.mimetype.startsWith("video/")
+          ? "video"
+          : null;
+
+        if (!mediaType) {
+          console.error("Loại tệp không được hỗ trợ:", file.mimetype);
+          continue;
+        }
+
+        // Tạo mới media cho bài viết
+        const media = new PostMedia({
+          post_id,
+          media_type: mediaType,
+          media_link: mediaUrl.url,
+        });
+
+        await media.create();
+      }
+    }
+    res
+      .status(200)
+      .json({ status: true, message: "Bài viết đã được cập nhật thành công" });
+  } catch (error) {
+    console.error("Lỗi khi cập nhật bài viết:", error);
+    res.status(500).json({
+      status: false,
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau",
+    });
+  }
+};
 
 const deletePost = async (req, res) => {
   const post_id = req?.params?.id;
-  console.log("post_id: ", post_id);
 
   try {
     // Kiểm tra bài viết có tồn tại không
@@ -207,7 +281,6 @@ const listPostById = async (req, res) => {
   }
 };
 
-
 const createCommentPostById = async (req, res) => {
   const user_id = req.params.id;
   try {
@@ -245,4 +318,11 @@ const deleteReactByUserID = async (req, res) => {
   }
 };
 
-export { createPost, listPost, listPostById, deletePost, deleteReactByUserID };
+export {
+  createPost,
+  editPost,
+  listPost,
+  listPostById,
+  deletePost,
+  deleteReactByUserID,
+};

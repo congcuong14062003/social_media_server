@@ -32,7 +32,6 @@ class Story {
       throw error;
     }
   }
-
   static async getAllStory(my_id) {
     const query = `
       SELECT * FROM story 
@@ -57,6 +56,44 @@ class Story {
       return results[0];
     } catch (error) {
       console.error("Error fetching stories:", error);
+      throw error;
+    }
+  }
+  static async deleteStory(story_id) {
+    const query = `
+      DELETE FROM story
+      WHERE story_id =?;
+    `;
+
+    try {
+      const [result] = await pool.execute(query, [story_id]);
+
+      if (result.affectedRows > 0) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error deleting story:", error);
+      throw error;
+    }
+  }
+  // Hàm thả tim cho story (tăng heart_quantity)
+  static async likeStory(story_id) {
+    const updateHeartQuery = `
+      UPDATE Story
+      SET heart_quantity = heart_quantity + 1
+      WHERE story_id = ?;
+    `;
+
+    try {
+      const [result] = await pool.execute(updateHeartQuery, [story_id]);
+
+      if (result.affectedRows > 0) {
+        return { success: true, message: "Thả tim thành công!" };
+      }
+      return { success: false, message: "Không tìm thấy story." };
+    } catch (error) {
+      console.error("Lỗi khi thả tim:", error);
       throw error;
     }
   }

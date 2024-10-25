@@ -104,7 +104,6 @@ const initializeSocket = (httpServer, users) => {
       // Nhận peerID người gọi
       socket.on("getPeerIDCaller", (data) => {
         console.log("Dataaaaaa: ", data);
-
         io.to(getSocketIdByUserId(data?.sender_id, users)).emit(
           "sendPeerIDCaller",
           data?.peer_id

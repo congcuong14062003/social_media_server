@@ -11,8 +11,6 @@ const findAllFriend = async (req, res) => {
     const user = await Friend.getAllFriends(user_id);
 
     if (user) {
-      console.log("có user");
-
       res.status(200).json({ status: true, users: user });
     } else {
       res.status(401).json({ status: false });
@@ -27,13 +25,11 @@ const findAllFriend = async (req, res) => {
 // tất cả bạn bè theo id người dùng
 const findAllFriendByUserId = async (req, res) => {
   try {
-    // console.log(req.body);
     const user_id = req.params.id;
 
     const user = await Friend.getAllFriends(user_id);
 
     if (user) {
-      console.log("có user");
 
       res.status(200).json({ status: true, users: user });
     } else {
@@ -154,12 +150,9 @@ const checkFriend = async (req, res) => {
   try {
     const my_id = req.body?.data?.user_id; // ID của mình
     const user_id = req.params.id; // id người mình muốn check
-    console.log("my_id: " + my_id);
-    console.log("user_id: " + user_id);
     
     // Gọi hàm kiểm tra bạn bè
     const isFriend = await Friend.isFriend(my_id, user_id);
-    console.log("Bạn bè: ", isFriend);
     if (isFriend) {
       res.status(200).json({ status: true, isFriend });
     } else {

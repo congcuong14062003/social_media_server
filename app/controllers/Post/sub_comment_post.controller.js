@@ -5,7 +5,6 @@ const createSubCommentByCommentId = async (req, res) => {
   const comment_id = req.params.id; // Lấy comment_id từ URL params
   const { replying_user_id, comment_text, media_link } = req.body; // Lấy dữ liệu từ request body
 
-  console.log("Request body:", req.body);
 
   // Kiểm tra các trường bắt buộc
   if (!replying_user_id || !comment_text) {
