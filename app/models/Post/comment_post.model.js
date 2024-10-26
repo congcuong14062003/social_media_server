@@ -30,39 +30,37 @@ class PostComment {
     try {
       const query = `
             WITH LatestProfileMedia AS (
-                SELECT 
-                    user_id, 
-                    media_link, 
-                    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
-                FROM ProfileMedia
-                WHERE media_type = 'avatar'
-            )
-            SELECT 
-                c.comment_id, 
-                c.post_id, 
-                c.commenting_user_id, 
-                c.comment_text, 
-                c.media_link,
-                c.created_at AS comment_created_at,
-                u.user_name AS commenting_user_name,
-                pm.media_link AS avatar,
-                sc.sub_comment_id, 
-                sc.replying_user_id, 
-                sc.comment_text AS sub_comment_text, 
-                sc.media_link AS sub_media_link,
-                sc.created_at AS sub_comment_created_at,
-                su.user_name AS replying_user_name,
-                la.media_link AS replying_user_avatar
-            FROM PostComment c
-            LEFT JOIN users u ON c.commenting_user_id = u.user_id
-            LEFT JOIN ProfileMedia pm ON c.commenting_user_id = pm.user_id 
-                AND pm.media_type = 'avatar' 
-                AND pm.created_at = (SELECT MAX(created_at) FROM ProfileMedia WHERE user_id = c.commenting_user_id)
-            LEFT JOIN SubPostComment sc ON c.comment_id = sc.comment_id
-            LEFT JOIN users su ON sc.replying_user_id = su.user_id
-            LEFT JOIN LatestProfileMedia la ON sc.replying_user_id = la.user_id AND la.rn = 1
-            WHERE c.post_id = ?
-            ORDER BY c.created_at DESC, sc.created_at ASC;
+      SELECT 
+          user_id, 
+          media_link, 
+          ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
+      FROM ProfileMedia
+      WHERE media_type = 'avatar'
+  )
+  SELECT 
+      c.comment_id, 
+      c.post_id, 
+      c.commenting_user_id, 
+      c.comment_text, 
+      c.media_link,
+      c.created_at AS comment_created_at,
+      u.user_name AS commenting_user_name,
+      lpm.media_link AS avatar, -- Sửa chỗ này để dùng CTE
+      sc.sub_comment_id, 
+      sc.replying_user_id, 
+      sc.comment_text AS sub_comment_text, 
+      sc.media_link AS sub_media_link,
+      sc.created_at AS sub_comment_created_at,
+      su.user_name AS replying_user_name,
+      la.media_link AS replying_user_avatar
+  FROM PostComment c
+  LEFT JOIN users u ON c.commenting_user_id = u.user_id
+  LEFT JOIN LatestProfileMedia lpm ON c.commenting_user_id = lpm.user_id AND lpm.rn = 1 -- Sửa chỗ này
+  LEFT JOIN SubPostComment sc ON c.comment_id = sc.comment_id
+  LEFT JOIN users su ON sc.replying_user_id = su.user_id
+  LEFT JOIN LatestProfileMedia la ON sc.replying_user_id = la.user_id AND la.rn = 1
+  WHERE c.post_id = ?
+  ORDER BY c.created_at DESC, sc.created_at ASC;
         `;
 
       const [rows] = await pool.execute(query, [post_id]);

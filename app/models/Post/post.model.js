@@ -148,7 +148,39 @@ ORDER BY
   }
 
   static async getPostById(post_id) {
-    const query = `SELECT * FROM Post WHERE post_id = ?`;
+    const query = `
+      SELECT 
+        p.post_id, 
+        p.post_text, 
+        p.post_privacy, 
+        p.react_emoji,
+        u.user_id, 
+        u.user_name, 
+        up.media_link AS avatar,
+        p.created_at 
+      FROM 
+        Post p
+      JOIN 
+        users u ON p.user_id = u.user_id
+      LEFT JOIN (
+        SELECT 
+          user_id, 
+          media_link
+        FROM 
+          ProfileMedia
+        WHERE 
+          media_type = 'avatar'
+          AND (user_id, created_at) IN (
+              SELECT user_id, MAX(created_at) 
+              FROM ProfileMedia
+              WHERE media_type = 'avatar'
+              GROUP BY user_id
+          )
+      ) up ON u.user_id = up.user_id
+      WHERE 
+        p.post_id = ?;
+    `;
+
     try {
       const [result] = await pool.execute(query, [post_id]);
       return result[0] || null;
@@ -157,6 +189,7 @@ ORDER BY
       throw error;
     }
   }
+
   static async deleteById(post_id) {
     const query = `DELETE FROM Post WHERE post_id = ?`;
     try {

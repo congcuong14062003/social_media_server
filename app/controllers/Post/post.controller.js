@@ -125,10 +125,10 @@ const editPost = async (req, res) => {
     // if (files.length > 0) {
     // Xóa media cũ liên quan đến bài viết
     console.log(">>>>:", is_media_changed);
-    
+
     if (is_media_changed == "true") {
       console.log("123231232323");
-      
+
       await pool.execute(`DELETE FROM PostMedia WHERE post_id = ?`, [post_id]);
 
       for (const file of files) {
@@ -237,6 +237,44 @@ const listPost = async (req, res) => {
     });
   }
 };
+const getPostById = async (req, res) => {
+  const post_id = req.params.id;
+
+  try {
+    // Lấy thông tin chi tiết của bài viết
+    const post = await Post.getPostById(post_id);
+
+    // Nếu không tìm thấy bài viết, trả về 404
+    if (!post) {
+      return res.status(404).json({ status: false, message: "Post not found" });
+    }
+
+    // Lấy danh sách media cho bài viết
+    const media = await PostMedia.getAllMediaByPostId(post_id);
+
+    // Lấy danh sách các react cho bài viết
+    const reacts = await PostReact.getAllReactByPost(post_id);
+
+    // Kết hợp tất cả thông tin lại
+    const postWithDetails = {
+      ...post, // Thông tin bài viết
+      media, // Danh sách media
+      reacts, // Danh sách react
+    };
+
+    // Trả về phản hồi thành công với chi tiết bài viết
+    res.status(200).json({
+      status: true,
+      data: postWithDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching post details:", error);
+    res.status(500).json({
+      status: false,
+      message: "An error occurred, please try again later",
+    });
+  }
+};
 
 const listPostById = async (req, res) => {
   const my_id = req.body?.data?.user_id ?? null; // Lấy user_id từ request body
@@ -322,6 +360,7 @@ export {
   createPost,
   editPost,
   listPost,
+  getPostById,
   listPostById,
   deletePost,
   deleteReactByUserID,
