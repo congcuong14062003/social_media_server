@@ -42,6 +42,17 @@ class ProfileMedia {
             throw error; // Ném lỗi để xử lý ở nơi khác
         }
     }
+    static async getAllMedia(user_id) {
+        try {
+            const getProfileMediaByIdQuery = "SELECT * FROM ProfileMedia WHERE user_id =?";
+            const [result] = await pool.execute(getProfileMediaByIdQuery, [
+                user_id
+            ]);
+            return result;
+        } catch (error) {
+            return error;
+        }
+    }
     static async getById(user_id) {
         try {
             const getProfileMediaByIdQuery = "SELECT * FROM ProfileMedia WHERE user_id = ?";

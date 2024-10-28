@@ -91,5 +91,5 @@ async function handleTokenGeneration(req, res, next, infoUser) {
   });
 
   req.body.accessToken = new_access_token;
-  return res.status(200).json({ status: true, message: "Đăng nhập thành công nhé" });
+  return res.status(200).json({ status: true });
 }

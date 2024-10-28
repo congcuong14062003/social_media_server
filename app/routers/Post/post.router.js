@@ -17,10 +17,10 @@ export default function PostRouter() {
   router.get("/list-post",Authentication, Authorization, listPost);
   router.get("/post-detail/:id",Authentication, Authorization, getPostById);
   router.get("/list-post-by-user/:id",Authentication, Authorization, listPostById);
-  router.post("/create-comment-post/:id",Authentication, Authorization, createCommentPostById);
+  router.post("/create-comment-post/:id",upload.array("file", 1), Authentication, Authorization, createCommentPostById);
   router.post("/create-react-post/:id",Authentication, Authorization, createReactPostById);
   router.get("/list-comment-post/:id",Authentication, Authorization, listCommentByPost);
-  router.post("/create-sub-comment-post/:id",Authentication, Authorization, createSubCommentByCommentId);
+  router.post("/create-sub-comment-post/:id",upload.array("file", 1),Authentication, Authorization, createSubCommentByCommentId);
   router.delete("/delete-react-post/:id",Authentication, Authorization, deleteReactByUserID);
 
   return router;

@@ -8,12 +8,13 @@ class PostComment {
     this.commenting_user_id = data.commenting_user_id || null;
     this.comment_text = data.comment_text || null;
     this.media_link = data.media_link || null;
+    this.media_type = data.media_type || null;
   }
 
   async create() {
     const createCommentQuery = `
-      INSERT INTO PostComment (comment_id, post_id, commenting_user_id, comment_text, media_link)
-      VALUES (?, ?, ?, ?, ?);
+      INSERT INTO PostComment (comment_id, post_id, commenting_user_id, comment_text, media_link, media_type)
+      VALUES (?, ?, ?, ?, ?,?);
     `;
     const [result] = await pool.execute(createCommentQuery, [
       this.comment_id,
@@ -21,6 +22,7 @@ class PostComment {
       this.commenting_user_id,
       this.comment_text,
       this.media_link,
+      this.media_type,
     ]);
 
     return result.affectedRows > 0;
@@ -43,6 +45,7 @@ class PostComment {
       c.commenting_user_id, 
       c.comment_text, 
       c.media_link,
+      c.media_type,
       c.created_at AS comment_created_at,
       u.user_name AS commenting_user_name,
       lpm.media_link AS avatar, -- Sửa chỗ này để dùng CTE
@@ -50,6 +53,7 @@ class PostComment {
       sc.replying_user_id, 
       sc.comment_text AS sub_comment_text, 
       sc.media_link AS sub_media_link,
+      sc.media_type AS sub_media_type,
       sc.created_at AS sub_comment_created_at,
       su.user_name AS replying_user_name,
       la.media_link AS replying_user_avatar
@@ -75,6 +79,7 @@ class PostComment {
           commenting_user_id,
           comment_text,
           media_link,
+          media_type,
           comment_created_at,
           commenting_user_name,
           avatar,
@@ -82,6 +87,7 @@ class PostComment {
           replying_user_id,
           sub_comment_text,
           sub_media_link,
+          sub_media_type,
           sub_comment_created_at,
           replying_user_name,
           replying_user_avatar,
@@ -95,6 +101,7 @@ class PostComment {
             commenting_user_id,
             comment_text,
             media_link,
+            media_type,
             created_at: comment_created_at,
             commenting_user_name,
             avatar,
@@ -109,6 +116,7 @@ class PostComment {
             replying_user_id,
             comment_text: sub_comment_text,
             media_link: sub_media_link,
+            media_type: sub_media_type,
             created_at: sub_comment_created_at,
             replying_user_name,
             replying_user_avatar,

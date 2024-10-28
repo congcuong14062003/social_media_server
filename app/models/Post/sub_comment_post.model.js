@@ -8,6 +8,7 @@ class SubPostComment {
     this.replying_user_id = data.replying_user_id || null; // Người bình luận cấp 2
     this.comment_text = data.comment_text || null; // Nội dung bình luận
     this.media_link = data.media_link || null; // Đường dẫn media (nếu có)
+    this.media_type = data.media_type || null; // Đường dẫn media (nếu có)
   }
 
   // Tạo bình luận cấp 2 mới
@@ -15,8 +16,8 @@ class SubPostComment {
     const sub_comment_id = this.sub_comment_id ?? generateId("sub_cmt_");
     try {
       const createSubCommentQuery = `
-        INSERT INTO SubPostComment (sub_comment_id, comment_id, replying_user_id, comment_text, media_link)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO SubPostComment (sub_comment_id, comment_id, replying_user_id, comment_text, media_link, media_type)
+        VALUES (?, ?, ?, ?, ?, ?);
       `;
       const [result] = await pool.execute(createSubCommentQuery, [
         sub_comment_id,
@@ -24,6 +25,7 @@ class SubPostComment {
         this.replying_user_id,
         this.comment_text,
         this.media_link,
+        this.media_type,
       ]);
 
       // Kiểm tra xem chèn có thành công không

@@ -2,6 +2,7 @@ import { generateKeyPair } from "crypto";
 import {
   createUsersBySocialAccount,
   findAllUser,
+  getAllMedia,
   getInfoProfileUser,
   getUserById,
   updateUserPassword,
@@ -70,6 +71,12 @@ export default function UserRouter(router = Router()) {
     Authentication,
     Authorization,
     getInfoProfileUser
+  );
+  router.get(
+    "/all-media/:id",
+    Authentication,
+    Authorization,
+    getAllMedia
   );
   router.get(
     "/info-profile/:id",

@@ -1,4 +1,5 @@
 import { Server } from "socket.io"; // Đảm bảo import đúng Server từ socket.io
+import pool from "../database/database";
 require("dotenv").config();
 
 let io; // Biến để lưu instance của socket.io
@@ -24,11 +25,21 @@ const initializeSocket = (httpServer, users) => {
         // Gửi danh sách online hiện tại cho tất cả người dùng
         io.emit("onlineUsers", getAllOnlineUsers(users));
       });
-
+      // Lắng nghe sự kiện khi người dùng logout
+      socket.on("userDisconnected", (data) => {
+        console.log(`User ${data?.user_id} disconnected.`);
+        removeUser(socket.id, users);
+        io.emit("onlineUsers", getAllOnlineUsers(users)); // Cập nhật danh sách online
+      });
+      // thay đổi sáng tối
+      socket.on("dark_theme", async (data) => {
+        console.log(data);
+        const darkThemeQuery =
+          "UPDATE UserSetting SET dark_theme = ? WHERE user_id = ?";
+        await pool.execute(darkThemeQuery, [data?.dark_theme, data?.user_id]);
+      });
       // Lắng nghe sự kiện đang viết tin nhắn
       socket.on("senderWritting", (data) => {
-        console.log("Dataaaaaaaaaaaaaaaaaaa: ", data);
-
         const receiverSocketId = getSocketIdByUserId(data?.receiver_id, users);
         if (receiverSocketId) {
           io.to(receiverSocketId).emit("receiverNotifiWritting", {
@@ -135,7 +146,7 @@ const initializeSocket = (httpServer, users) => {
       // socket.on("sendComment", (data) => {
       //   // Phát sự kiện bình luận mới đến tất cả client
       //   console.log("data comment: ", data);
-        
+
       //   io.emit("newComment", data);
       // });
     });

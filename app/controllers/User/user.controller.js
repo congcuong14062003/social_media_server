@@ -132,7 +132,7 @@ async function userLogout(req, res) {
     // await TokenModel.deleteOne({ userId: req.user.id });
 
     // Phản hồi thành công
-    res.status(200).json({ status: true, message: "Logout successful" });
+    res.status(200).json({ status: true });
   } catch (error) {
     console.error("Logout error:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -293,7 +293,20 @@ const getUserById = async (req, res) => {
     res.status(500).json({ status: false, message: error.message ?? error });
   }
 };
-
+// lấy tất cả ảnh
+const getAllMedia = async (req, res) => {
+  const id_user = req.params.id;
+  try {
+    const media = await ProfileMedia.getAllMedia(id_user);
+    if (!media) {
+      return res.status(404).json({ status: false });
+    }
+    res.status(200).json({ status: true, data: media });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ status: false, message: error.message?? error });
+  }
+};
 export {
   userSignup,
   userLogin,
@@ -303,5 +316,6 @@ export {
   getInfoProfileUser,
   getUserById,
   createUsersBySocialAccount,
-  updateUserPassword
+  updateUserPassword,
+  getAllMedia
 };
