@@ -13,8 +13,7 @@ class Message {
     this.content_text_encrypt = data.content_text_encrypt;
     this.content_text_encrypt_by_owner = data.content_text_encrypt_by_owner;
     this.content_type = data.content_type;
-    this.reply_text = data.reply_text;
-    this.reply_type = data.reply_type;
+    this.reply_id = data.reply_id;
     this.sender_id = data.sender_id;
     this.receiver_id = data.receiver_id;
     this.name_file = data.name_file || null;
@@ -65,11 +64,10 @@ class Message {
           content_text_encrypt_by_owner,
           content_type,
           name_file,
-          reply_text,
-          reply_type,
+          reply_id,
           sender_id,
           receiver_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        ) VALUES (?, ?, ?, ?, ?, ?, ?);
       `;
 
       const [result] = await pool.execute(createMessageQuery, [
@@ -77,13 +75,12 @@ class Message {
         textEnCryptoRSAForSender,
         this.content_type,
         this.name_file,
-        this.reply_text,
-        this.reply_type,
+        this.reply_id,
         this.sender_id,
         this.receiver_id,
       ]);
 
-      return result.affectedRows > 0;
+      return result.insertId ?? false;
     } catch (error) {
       console.error("Error creating message: ", error);
       throw error;
@@ -99,8 +96,7 @@ class Message {
           content_text_encrypt_by_owner,
           content_type,
           name_file,
-          reply_text,
-          reply_type,
+          reply_id,
           sender_id,
           receiver_id,
           created_at

@@ -290,7 +290,7 @@ const listPostById = async (req, res) => {
 
     // Nếu không có bài viết nào thỏa mãn điều kiện, trả về phản hồi 404
     if (filteredPosts.length === 0) {
-      return res.status(404).json({ status: false });
+      return res.status(200).json({ status: false, data: [] });
     }
 
     // Lấy tất cả media và reacts cho từng bài viết
@@ -307,9 +307,14 @@ const listPostById = async (req, res) => {
 
     // Đợi tất cả các promise media và reacts hoàn thành
     const postsWithMediaAndReact = await Promise.all(mediaAndReactPromises);
+    if(postsWithMediaAndReact.length > 0) {
 
+      res.status(200).json({ status: true, data: postsWithMediaAndReact });
+    }
+    else {
+      res.status(200).json({ status: true, data: [] });
+    }
     // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media và reacts
-    res.status(200).json({ status: true, data: postsWithMediaAndReact });
   } catch (error) {
     console.error("Error fetching posts:", error);
     res.status(500).json({

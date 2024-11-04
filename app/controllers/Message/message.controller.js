@@ -12,8 +12,7 @@ const createMessage = async (req, res) => {
     const friend_id = req.params?.id ?? null;
     let content_text = (req.body?.content_text).toString() ?? "";
     const content_type = req.body?.content_type ?? "";
-    const reply_text = req.body?.reply_text ?? null;
-    const reply_type = req.body?.reply_type ?? null;
+    const reply_id = req.body?.reply_id ?? null;
     const name_file = req.body?.name_file ?? "";
     console.log(files[0]);
 
@@ -42,8 +41,7 @@ const createMessage = async (req, res) => {
       sender_id: user_id,
       receiver_id: friend_id,
       content_type: content_type,
-      reply_text: reply_text,
-      reply_type: reply_type,
+      reply_id: reply_id,
       name_file: name_file,
     });
 
@@ -53,14 +51,14 @@ const createMessage = async (req, res) => {
     // Respond based on the result of the message creation
     if (result) {
       // Send message to receiver regardless of database result
-      io.to(getSocketIdByUserId(friend_id, users)).emit("receiveMessage", {
+      io.to([getSocketIdByUserId(friend_id, users), getSocketIdByUserId(user_id, users)]).emit("receiveMessage", {
+        messenger_id: result,
         sender_id: user_id,
         receiver_id: friend_id,
         content_text: content_text,
         content_type: content_type,
         name_file: name_file,
-        reply_text: reply_text,
-        reply_type: reply_type
+        reply_id: reply_id,
       });
       io.to(getSocketIdByUserId(friend_id, users)).emit("updateMessage");
       io.to(getSocketIdByUserId(user_id, users)).emit("updateMessage");
@@ -127,15 +125,14 @@ const getAllMessages = async (req, res) => {
         }
 
         return {
-          message_id: item.id,
+          messenger_id: item.messenger_id,
           sender_id: item.sender_id,
           receiver_id: item.receiver_id,
           content_text,
           name_file: item.name_file,
           content_type: item.content_type,
           created_at: item.created_at,
-          reply_text: item.reply_text,
-          reply_type: item.reply_type,
+          reply_id: item.reply_id,
         };
       })
     );

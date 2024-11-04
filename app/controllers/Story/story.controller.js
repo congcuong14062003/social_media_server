@@ -16,9 +16,7 @@ const createStory = async (req, res) => {
       story_privacy: story_privacy,
     });
     await story.create();
-    res
-      .status(200)
-      .json({ status: true });
+    res.status(200).json({ status: true });
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({
@@ -27,6 +25,34 @@ const createStory = async (req, res) => {
     });
   }
 };
+// xoá tin
+const deleteStory = async (req, res) => {
+  const story_id = req.params.id;
+
+  try {
+    // Gọi phương thức deleteStory từ model Story
+    const isDeleted = await Story.deleteStory(story_id);
+
+    if (isDeleted) {
+      res.status(200).json({
+        status: true,
+        message: "Xóa tin thành công!",
+      });
+    } else {
+      res.status(404).json({
+        status: false,
+        message: "Không tìm thấy tin cần xóa.",
+      });
+    }
+  } catch (error) {
+    console.error("Lỗi khi xóa tin:", error);
+    res.status(500).json({
+      status: false,
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau",
+    });
+  }
+};
+
 // list stories
 const listStory = async (req, res) => {
   try {
@@ -81,10 +107,7 @@ const storyById = async (req, res) => {
       });
     }
 
-
-
     const user_id = story?.user_id;
-
 
     // Kiểm tra nếu user_id không hợp lệ
     if (!user_id) {
@@ -125,12 +148,10 @@ const storyById = async (req, res) => {
 
 const createHeartStory = async (req, res) => {
   try {
-    const story_id  = req.params.id;
+    const story_id = req.params.id;
     const user_id = req.body?.data?.user_id;
-    const heart = await Story.likeStory(story_id)
-    res
-      .status(200)
-      .json({ status: true });
+    const heart = await Story.likeStory(story_id);
+    res.status(200).json({ status: true });
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({
@@ -139,4 +160,4 @@ const createHeartStory = async (req, res) => {
     });
   }
 };
-export { createStory, listStory, storyById,createHeartStory };
+export { createStory, listStory, storyById, createHeartStory, deleteStory };
