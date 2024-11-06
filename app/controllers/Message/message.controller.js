@@ -51,7 +51,10 @@ const createMessage = async (req, res) => {
     // Respond based on the result of the message creation
     if (result) {
       // Send message to receiver regardless of database result
-      io.to([getSocketIdByUserId(friend_id, users), getSocketIdByUserId(user_id, users)]).emit("receiveMessage", {
+      io.to([
+        getSocketIdByUserId(friend_id, users),
+        getSocketIdByUserId(user_id, users),
+      ]).emit("receiveMessage", {
         messenger_id: result,
         sender_id: user_id,
         receiver_id: friend_id,
@@ -88,7 +91,7 @@ export const updateIsRead = async (req, res) => {
     if (result) {
       res.status(200).json({ status: true });
     } else {
-      res.status(400).json({ status: false});
+      res.status(400).json({ status: false });
     }
   } catch (error) {
     console.error("Error updating is_read:", error);
@@ -143,6 +146,96 @@ const getAllMessages = async (req, res) => {
     return res.status(500).json({
       status: false,
       message: "An error occurred, please try again later",
+    });
+  }
+};
+const deleteAllMessenger = async (req, res) => {
+  try {
+    const user_id = req.body?.data?.user_id;
+    const friend_id = req.params?.friend_id;
+    if (!user_id || !friend_id) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Người dùng không tồn tại" });
+    }
+
+    const result = await Message.deleteAllMessage(user_id, friend_id);
+    if (result <= 0) {
+      throw new Error("Lỗi");
+    }
+
+    return res.status(200).json({ status: 200 });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Opps! Có một chút lỗi nhỏ. Thử lại tác vụ",
+    });
+  }
+};
+// Hàm deleteMessenger trong controller
+const deleteMessenger = async (req, res) => {
+  try {
+    const user_id = req.body?.data?.user_id;
+    const messenger_id = req.params?.messenger_id;
+    if (!user_id) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Người dùng không tồn tại" });
+    }
+
+    const result = await Message.deleteMessageByMessageID(
+      user_id,
+      messenger_id
+    );
+
+    if (!result) {
+      return res.status(404).json({
+        status: false,
+        message: "Không tìm thấy hoặc không thể xóa tin nhắn",
+      });
+    }
+
+    return res.status(200).json({ status: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Opps! Có một chút lỗi nhỏ. Thử lại tác vụ",
+    });
+  }
+};
+
+// Hàm deleteMessengerByOwnerSide trong controller
+const deleteMessengerByOwnerSide = async (req, res) => {
+  console.log(123);
+
+  try {
+    const user_id = req.body?.data?.user_id;
+    const messenger_id = req.params?.messenger_id;
+    if (!user_id) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Người dùng không tồn tại" });
+    }
+
+    const result = await Message.deleteMessageByMessageIDOwnSide(
+      user_id,
+      messenger_id
+    );
+    if (!result) {
+      return res.status(404).json({
+        status: false,
+        message: "Không tìm thấy hoặc không thể xóa tin nhắn",
+      });
+    }
+
+    return res.status(200).json({ status: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      status: false,
+      message: "Opps! Có một chút lỗi nhỏ. Thử lại tác vụ",
     });
   }
 };
@@ -253,7 +346,24 @@ ORDER BY last_message_time DESC;
     });
   }
 };
+// xửa tin nhắn
+const editMessage = async (req, res) => {
+  const { messageId } = req.params;  // Lấy messageId từ URL
+  const { newText } = req.body;      // Lấy nội dung tin nhắn mới từ request body
+  const userId = req.user.id;        // Giả sử bạn đã có `userId` từ session hoặc JWT
 
+  try {
+      const isUpdated = await Message.updateMessageById(userId, messageId, newText);
+
+      if (isUpdated) {
+          res.status(200).json({ success: true, message: "Message updated successfully" });
+      } else {
+          res.status(403).json({ success: false, message: "You are not authorized to edit this message" });
+      }
+  } catch (error) {
+      res.status(500).json({ success: false, message: "Error updating message", error: error.message });
+  }
+};
 // kiểm tra cặp khoá đã tồn tại chưa
 const checkExistKeyPair = async (req, res) => {
   try {
@@ -375,6 +485,10 @@ const deleteKeysPair = async (req, res) => {
 export {
   createMessage,
   getAllMessages,
+  deleteAllMessenger,
+  deleteMessenger,
+  editMessage,
+  deleteMessengerByOwnerSide,
   getAllConversations,
   checkExistKeyPair,
   checkExistKeyPairFriend,

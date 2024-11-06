@@ -5,7 +5,11 @@ import {
   checkSecretDeCryptoPrivateKey,
   createKeyPair,
   createMessage,
+  deleteAllMessenger,
   deleteKeysPair,
+  deleteMessenger,
+  deleteMessengerByOwnerSide,
+  editMessage,
   getAllConversations,
   getAllMessages,
   updateIsRead,
@@ -36,6 +40,34 @@ export default function MessageRouter(router = Router()) {
     Authorization,
     getAllMessages
   );
+  router.put(
+    "/edit-messages/:messageId",
+    Authentication,
+    Authorization,
+    editMessage
+  );
+
+  router.delete(
+    "/delete-all-messenger/:friend_id",
+    Authentication,
+    Authorization,
+    deleteAllMessenger
+  );
+
+  router.delete(
+    "/delete-messenger/:messenger_id",
+    Authentication,
+    Authorization,
+    deleteMessenger
+  );
+
+  router.delete(
+    "/delete-messenger-by-owner-side/:messenger_id",
+    Authentication,
+    Authorization,
+    deleteMessengerByOwnerSide
+  );
+
   router.post("/update-isseen/:messageId", Authentication, Authorization, updateIsRead);
   // kiểm tra tồn tại cặp khoá
   router.get(

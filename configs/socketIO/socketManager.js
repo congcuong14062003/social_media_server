@@ -50,6 +50,11 @@ const initializeSocket = (httpServer, users) => {
           console.error(`No socket found for user ID: ${data?.receiver_id}`);
         }
       });
+      // Lắng nghe sự kiện xoá tin nhắn từ client
+      socket.on("message_deleted", ({ messageId }) => {
+        // Phát lại sự kiện đến các client liên quan (cả người gửi và người nhận)
+        io.emit("message_deleted", { messageId });
+      });
 
       // Lắng nghe có sự kiện mời vào cuộc gọi
       socket.on("callUser", (data) => {

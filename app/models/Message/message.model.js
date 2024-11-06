@@ -121,6 +121,94 @@ class Message {
       throw error;
     }
   }
+  static async getMessageByMessengerID(messenger_id) {
+    try {
+      const getMessageQuery = `
+        SELECT 
+      *
+        FROM PrivateMessage
+        WHERE 
+        messenger_id = ?;
+      `;
+
+      const [result] = await pool.execute(getMessageQuery, [messenger_id]);
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching messages: ", error);
+      throw error;
+    }
+  }
+  static async deleteAllMessage(user_id, friend_id) {
+    try {
+      // Cập nhật `content_text_encrypt_by_owner` thành NULL nếu user_id là sender
+      // và `content_text_encrypt` thành NULL nếu user_id là receiver.
+      const deleteMessageQuery = `
+        UPDATE PrivateMessage
+        SET 
+          content_text_encrypt_by_owner = CASE WHEN sender_id = ? THEN NULL ELSE content_text_encrypt_by_owner END,
+          content_text_encrypt = CASE WHEN receiver_id = ? THEN NULL ELSE content_text_encrypt END
+        WHERE 
+          (sender_id = ? AND receiver_id = ?)
+          OR 
+          (sender_id = ? AND receiver_id = ?);
+      `;
+
+      const [result] = await pool.execute(deleteMessageQuery, [
+        user_id, // Xoá tin nhắn phía sender
+        user_id, // Xoá tin nhắn phía receiver
+        user_id,
+        friend_id,
+        friend_id,
+        user_id,
+      ]);
+
+      return result?.affectedRows;
+    } catch (error) {
+      console.error("Error deleting messages on user's side: ", error);
+      throw error;
+    }
+  }
+
+  // Sửa hàm deleteMessageByMessageID
+  static async deleteMessageByMessageID(user_id, messenger_id) {
+    try {
+      const [message] = await this.getMessageByMessengerID(messenger_id);
+      if (!message) return false;
+
+      const { sender_id, receiver_id } = message;
+
+      if (user_id === sender_id || user_id === receiver_id) {
+        const deleteMessageQuery = `DELETE FROM PrivateMessage WHERE messenger_id = ?;`;
+        const [result] = await pool.execute(deleteMessageQuery, [messenger_id]);
+        return result?.affectedRows > 0;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error deleting message by ID: ", error);
+      throw error;
+    }
+  }
+
+  // Sửa hàm deleteMessageByMessageIDOwnSide
+  static async deleteMessageByMessageIDOwnSide(user_id, messenger_id) {
+    try {
+      const [message] = await this.getMessageByMessengerID(messenger_id);
+      if (!message) return false;
+
+      const { sender_id } = message;
+      const deleteMessageQuery =
+        user_id === sender_id
+          ? `UPDATE PrivateMessage SET content_text_encrypt_by_owner = NULL WHERE messenger_id = ?;`
+          : `UPDATE PrivateMessage SET content_text_encrypt = NULL WHERE messenger_id = ?;`;
+
+      const [result] = await pool.execute(deleteMessageQuery, [messenger_id]);
+      return result?.affectedRows > 0;
+    } catch (error) {
+      console.error("Error deleting message on user's side: ", error);
+      throw error;
+    }
+  }
   static async updateIsRead(messageId, userId) {
     try {
       const query = `
@@ -133,6 +221,39 @@ class Message {
     } catch (error) {
       console.error("Error updating is_read in database:", error);
       throw new Error(error);
+    }
+  }
+  // Update tin nhắn theo ID trong Message model
+  static async updateMessageById(userId, messageId, newText) {
+    try {
+      // Kiểm tra xem tin nhắn có thuộc về người dùng hiện tại không
+      const [message] = await this.getMessageByMessengerID(messageId);
+      if (!message || message.sender_id !== userId) {
+        return false; // Người dùng không có quyền chỉnh sửa tin nhắn này
+      }
+
+      // Mã hoá nội dung tin nhắn mới (tuỳ vào yêu cầu của bạn)
+      const encryptedText = encryptWithPublicKey(
+        newText,
+        message.receiver_public_key
+      );
+
+      // Thực hiện cập nhật nội dung tin nhắn
+      const updateMessageQuery = `
+          UPDATE PrivateMessage 
+          SET content_text_encrypt_by_owner = ?
+          WHERE messenger_id = ? AND sender_id = ?;
+      `;
+      const [result] = await pool.execute(updateMessageQuery, [
+        encryptedText,
+        messageId,
+        userId,
+      ]);
+
+      return result.affectedRows > 0; // Trả về true nếu cập nhật thành công
+    } catch (error) {
+      console.error("Error updating message:", error);
+      throw error;
     }
   }
 }

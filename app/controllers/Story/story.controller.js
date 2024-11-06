@@ -59,18 +59,21 @@ const listStory = async (req, res) => {
     const user_id = req.body?.data?.user_id; // Lấy ID người dùng từ body
     const stories = await Story.getAllStory(user_id);
 
-    // Lọc ra các stories có phạm vi truy cập bằng 1
-    const publicStories = stories.filter((story) => story.story_privacy === 1);
+    // Lọc ra các stories có phạm vi truy cập bằng 1 hoặc story của người dùng đang đăng
+    const filteredStories = stories.filter(
+      (story) => story.story_privacy === 1 || story.user_id === user_id
+    );
 
     // Khởi tạo các mảng để chứa thông tin stories và thông tin người dùng
     const storiesWithUserInfo = await Promise.all(
-      publicStories.map(async (story) => {
+      filteredStories.map(async (story) => {
         const profileUser = await Users.getById(story.user_id);
         const user_avatar = await ProfileMedia.getLatestAvatarById(
           story.user_id
         ); // Gọi hàm để lấy avatar mới nhất
 
         return {
+          heart_quantity: story.heart_quantity,
           story_id: story.story_id,
           media_link: story.media_link,
           created_at: story.created_at,
@@ -94,6 +97,7 @@ const listStory = async (req, res) => {
     });
   }
 };
+
 // Lấy story theo ID
 const storyById = async (req, res) => {
   try {

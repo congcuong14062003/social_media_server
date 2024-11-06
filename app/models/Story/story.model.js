@@ -35,18 +35,21 @@ class Story {
   static async getAllStory(my_id) {
     const query = `
       SELECT * FROM story 
-      WHERE story_privacy = 1
-      ORDER BY created_at DESC;  -- Giả sử bạn có trường created_at để sắp xếp
+      WHERE (user_id = ? AND (story_privacy = 0 OR story_privacy = 1))  -- Nếu là người đăng, lấy cả 0 và 1
+      OR (user_id != ? AND story_privacy = 1)                         -- Nếu không phải người đăng, chỉ lấy 1
+      ORDER BY created_at DESC;                                       -- Giả sử bạn có trường created_at để sắp xếp
     `;
 
     try {
-      const [results] = await pool.execute(query);
+      const [results] = await pool.execute(query, [my_id, my_id]); // Truyền my_id vào hai lần
       return results;
     } catch (error) {
       console.error("Error fetching stories:", error);
       throw error;
     }
-  }
+}
+
+
   static async getStoryById(id_story) {
     const query = `
       SELECT * FROM story where story_id = ?
