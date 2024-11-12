@@ -6,6 +6,7 @@ import express from 'express';
 import PostRouter from "./Post/post.router.js";
 import EmailOTPRouter from "./Email/email_otp.router.js";
 import StoryRouter from "./Story/story.router.js";
+import NoticeRouter from "./Notice/notice.router.js";
 
 export default function RouterMain(app) {
   app.use("/users", UserRouter(express.Router()));
@@ -13,6 +14,7 @@ export default function RouterMain(app) {
   app.use("/stories", StoryRouter(express.Router()));
   app.use("/friends", FriendRouter(express.Router()));
   app.use("/messages", MessageRouter(express.Router()));
+  app.use("/notices", NoticeRouter(express.Router()));
   app.use("/token", TokenRouter(express.Router()));
   app.use('/otp', EmailOTPRouter(express.Router()));
   return app;

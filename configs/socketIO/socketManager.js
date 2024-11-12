@@ -1,5 +1,8 @@
 import { Server } from "socket.io"; // Đảm bảo import đúng Server từ socket.io
 import pool from "../database/database";
+import { findAllFriendByUserId } from "../../app/controllers/Friend/friend.controller";
+import Friend from "../../app/models/Friend/friend.model";
+import Notice from "../../app/models/Notice/notice.model";
 require("dotenv").config();
 
 let io; // Biến để lưu instance của socket.io
@@ -54,6 +57,117 @@ const initializeSocket = (httpServer, users) => {
       socket.on("message_deleted", ({ messageId }) => {
         // Phát lại sự kiện đến các client liên quan (cả người gửi và người nhận)
         io.emit("message_deleted", { messageId });
+      });
+
+      socket.on("sendComment", (data) => {
+        const {
+          user_create_notice,
+          user_name_comment,
+          post_owner_id,
+          post_id,
+          created_at,
+        } = data;
+        console.log("Nhận bình luận mới từ client:", data);
+
+        // Lấy socketId của người đăng bài từ danh sách người dùng online
+        const postOwnerSocketId = getSocketIdByUserId(post_owner_id, users);
+
+        if (postOwnerSocketId) {
+          // Gửi sự kiện 'newCommentNotification' chỉ tới người đăng bài
+          io.to(postOwnerSocketId).emit("newCommentNotification", {
+            user_create_notice,
+            post_owner_id,
+            post_id,
+            message: `Người dùng ${user_name_comment} đã bình luận bài viết của bạn.`,
+            created_at,
+          });
+        } else {
+          console.error(`Không tìm thấy socket cho user ID: ${post_owner_id}`);
+        }
+      });
+      socket.on("sendSubComment", (data) => {
+        const {
+          user_create_notice,
+          user_name_comment,
+          post_owner_id,
+          post_id,
+          created_at,
+        } = data;
+        console.log("Nhận sub bình luận mới từ client:", data);
+
+        // Lấy socketId của người bình luận từ danh sách người dùng online
+        const postOwnerSocketId = getSocketIdByUserId(post_owner_id, users);
+
+        if (postOwnerSocketId) {
+          // Gửi sự kiện 'newCommentNotification' chỉ tới người đăng bài
+          io.to(postOwnerSocketId).emit("newSubCommentNotification", {
+            user_create_notice,
+            post_owner_id,
+            post_id,
+            message: `Người dùng ${user_name_comment} đã trả lời bình luận của bạn trong một bài viết.`,
+            created_at,
+          });
+        } else {
+          console.error(`Không tìm thấy socket cho user ID: ${post_owner_id}`);
+        }
+      });
+      // Sự kiện đăng bài viết
+      // Sự kiện đăng bài viết
+      socket.on("new_post", async (data) => {
+        const { user_create_post, post_id, userName, created_at } = data;
+        console.log("Nhận bài viết mới từ client:", data);
+
+        // Giả sử chúng ta có hàm getFriends để lấy danh sách bạn bè
+        const friends = await Friend.getAllFriends(user_create_post);
+        console.log("friends:", friends);
+
+        if (friends.length > 0) {
+          friends.forEach(async (friend) => {
+            // Lấy socketId của bạn bè từ danh sách người dùng online
+            const friendSocketId = getSocketIdByUserId(friend.friend_id, users);
+            console.log("friendSocketId:", friendSocketId);
+
+            if (friendSocketId) {
+              console.log(
+                "Gửi thông báo bài viết mới cho bạn bè:",
+                friend.user_name
+              );
+
+              // Gửi thông báo về bài viết mới cho từng người bạn của người đăng bài
+              io.to(friendSocketId).emit("newPostNotification", {
+                user_create_post,
+                post_id,
+                friend_id: friend?.friend_id,
+                created_at,
+                message: `${userName} vừa đăng một bài viết mới.`,
+              });
+            } else {
+              // Nếu bạn bè offline, lưu thông báo vào cơ sở dữ liệu để gửi lại sau
+              const newNotice = new Notice({
+                user_create_notice: user_create_post,
+                user_id: friend.friend_id,
+                content: `${userName} vừa đăng một bài viết mới.`,
+                type: "post",
+                target_id: `/post/${post_id}`,
+                created_at,
+              });
+
+              try {
+                const isCreated = await newNotice.create(); // Gọi phương thức create để lưu thông báo
+                if (isCreated) {
+                  console.log(
+                    `Lưu thông báo cho bạn bè offline: ${friend.user_name}`
+                  );
+                }
+              } catch (error) {
+                console.error(
+                  "Lỗi khi lưu thông báo cho bạn bè offline:",
+                  error
+                );
+              }
+            }
+          });
+        }
       });
 
       // Lắng nghe có sự kiện mời vào cuộc gọi

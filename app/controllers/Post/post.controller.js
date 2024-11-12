@@ -79,7 +79,7 @@ const createPost = async (req, res) => {
 
     res
       .status(200)
-      .json({ status: true, message: "Bài viết đã được tạo thành công" });
+      .json({ status: true, message: "Bài viết đã được tạo thành công", post_id: postId });
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({
@@ -246,7 +246,7 @@ const getPostById = async (req, res) => {
 
     // Nếu không tìm thấy bài viết, trả về 404
     if (!post) {
-      return res.status(404).json({ status: false, message: "Post not found" });
+      return res.status(404).json({ status: false, message: "Bài viết không tồn tại hoặc đã bị xoá" });
     }
 
     // Lấy danh sách media cho bài viết
