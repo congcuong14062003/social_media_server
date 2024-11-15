@@ -43,6 +43,7 @@ const createMessage = async (req, res) => {
       content_type: content_type,
       reply_id: reply_id,
       name_file: name_file,
+      created_at: new Date()
     });
 
     // Attempt to create the message in the database
@@ -62,6 +63,7 @@ const createMessage = async (req, res) => {
         content_type: content_type,
         name_file: name_file,
         reply_id: reply_id,
+        created_at: new Date()
       });
       io.to(getSocketIdByUserId(friend_id, users)).emit("updateMessage");
       io.to(getSocketIdByUserId(user_id, users)).emit("updateMessage");
