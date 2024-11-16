@@ -211,9 +211,8 @@ const listPost = async (req, res) => {
 
     // Lấy tất cả media cho từng bài viết
     const mediaPromises = posts.map(async (post) => {
-      const media = await PostMedia.getAllMediaByPostId(post.post_id);
+      const media = await PostMedia.getAllMediaByPostId(post?.post_id);
       const reacts = await PostReact.getAllReactByPost(post?.post_id);
-
       return {
         ...post, // Spread thông tin từ bài viết
         reacts,

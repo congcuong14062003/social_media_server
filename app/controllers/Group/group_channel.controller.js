@@ -1,6 +1,7 @@
 import uploadFile from "../../../configs/cloud/cloudinary.config";
 import GroupChannel from "../../models/Group/group_channel.model";
 import GroupMember from "../../models/Group/group_member.model";
+import GroupPost from "../../models/Group/group_post.model";
 require("dotenv").config();
 
 const createGroupChannel = async (req, res) => {
@@ -105,16 +106,26 @@ const getInfoGroupChannel = async (req, res) => {
   try {
     const group_id = req.params?.group_id;
     const group = await GroupChannel.getGroupByGroupId(group_id);
+
     if (!group) {
       return res
         .status(404)
         .json({ status: false, message: "Nhóm không tồn tại!" });
     }
-    res.status(200).json({ status: true, data: group });
+
+    // Lấy số lượng thành viên trong nhóm
+    const memberCount = await GroupMember.getMemberCountByGroupId(group_id);
+
+    // Thêm số lượng thành viên vào dữ liệu trả về
+    res.status(200).json({
+      status: true,
+      data: { ...group, member_count: memberCount }, // Trả về group với số lượng thành viên
+    });
   } catch (error) {
     res.status(404).json({ status: false, message: error.message });
   }
 };
+
 // Controller để cập nhật thông tin nhóm
 const updateGroup = async (req, res) => {
   try {
@@ -122,6 +133,7 @@ const updateGroup = async (req, res) => {
     const { group_name, group_slogan, group_privacy } = req.body;
     let avatar_media_link = null;
     let cover_media_link = null;
+    console.log(group_name, group_slogan, group_privacy);
 
     if (!groupId) {
       return res.status(400).json({
@@ -191,10 +203,10 @@ const deleteGroup = async (req, res) => {
         message: "Group không tồn tại",
       });
     }
-
+// const isDeletedPost = await 
     const isDeleted = await GroupChannel.deleteGroup(groupId);
-
-    if (isDeleted) {
+    const isDeletedPost = await GroupPost.deleteAllGroupPost(groupId);
+    if (isDeleted && isDeletedPost) {
       return res
         .status(200)
         .json({ status: true, message: "Xóa nhóm thành công" });

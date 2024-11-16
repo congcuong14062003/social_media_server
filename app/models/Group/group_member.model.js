@@ -3,8 +3,6 @@ import GroupChannel from "./group_channel.model";
 
 class GroupMember extends GroupChannel {
   constructor(data) {
-console.log("dataa: ", data);
-
     super(data);
     this.member_id = data.member_id;
     this.member_status = data.member_status;
@@ -50,7 +48,20 @@ console.log("dataa: ", data);
       console.error(error);
     }
   }
-
+  static async getMemberCountByGroupId(group_id) {
+    try {
+      const getMemberCountQuery = `
+        SELECT COUNT(*) AS member_count
+        FROM GroupMember
+        WHERE group_id = ?;
+      `;
+      const [result] = await pool.execute(getMemberCountQuery, [group_id]);
+      return result[0]?.member_count || 0; // Trả về số lượng thành viên
+    } catch (error) {
+      console.error(error);
+      return 0; // Trả về 0 nếu có lỗi
+    }
+  }
 
   static async updateAcceptInvite(user_id, group_id) {
     try {

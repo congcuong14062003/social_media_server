@@ -1,3 +1,4 @@
+import GroupMember from '../models/Group/group_member.model';
 import convertFalsyValues from './convertFalsy';
 
 const jwt = require('jsonwebtoken');

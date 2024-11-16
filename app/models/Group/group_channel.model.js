@@ -64,7 +64,8 @@ class GroupChannel {
       avatar_media_link,
       cover_media_link,
     } = data;
-
+    console.log("data group: ", data);
+    
     // Tạo đối tượng chứa các cột cần cập nhật
     const updateFields = [];
     const updateValues = [];

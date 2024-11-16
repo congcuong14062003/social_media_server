@@ -5,6 +5,7 @@ function convertFalsyValues(obj) {
       if (obj[key].toLowerCase() === "null") obj[key] = null;
       else if (obj[key].toLowerCase() === "undefined") obj[key] = undefined;
       else if (obj[key] === "0") obj[key] = 0;
+      else if (obj[key] === "1") obj[key] = 1;
       else if (obj[key].toLowerCase() === "false") obj[key] = false;
     } else if (typeof obj[key] === "object" && obj[key] !== null) {
       convertFalsyValues(obj[key]); // Đệ quy với các object lồng nhau
