@@ -4,8 +4,8 @@ import { Users } from "../../models/User/users.model.js";
 
 // Thêm thông báo mới
 const createNotice = async (req, res) => {
-  const { user_create_notice, user_id,  content, type, target_id, created_at } = req.body;
-  const newNotice = new Notice({ user_create_notice, user_id, content, type, target_id, created_at });
+  const { sender_id, receiver_id, content, link_notice, created_at } = req.body;
+  const newNotice = new Notice({ sender_id, receiver_id, content, link_notice, created_at});
   try {
     const isCreated = await newNotice.create();
     if (isCreated) {
@@ -89,7 +89,7 @@ const listNoticesByUser = async (req, res) => {
 
     // Duyệt qua các thông báo và lấy avatar của người tạo thông báo
     for (let notice of notices) {
-      const avatar = await ProfileMedia.getLatestAvatarById(notice.user_create_notice);  // Lấy avatar của người tạo thông báo
+      const avatar = await ProfileMedia.getLatestAvatarById(notice.sender_id);  // Lấy avatar của người tạo thông báo
       notice.avatar = avatar;  // Thêm avatar vào thông báo
     }
 

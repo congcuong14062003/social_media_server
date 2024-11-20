@@ -217,8 +217,7 @@ const listPost = async (req, res) => {
 
     // Lấy tất cả media cho từng bài viết
     const mediaPromises = posts.map(async (post) => {
-      const postGroup = await GroupPost.getGroupPostByPostId(post?.post_id);
-
+      const postGroup = await GroupPost.getGroupPostAcceptedByPostId(post?.post_id);
       const media = await PostMedia.getAllMediaByPostId(post?.post_id);
       const reacts = await PostReact.getAllReactByPost(post?.post_id);
       const infor_group = await GroupChannel.getGroupByGroupId(postGroup?.group_id);
@@ -248,6 +247,7 @@ const listPost = async (req, res) => {
     });
   }
 };
+
 const getPostById = async (req, res) => {
   const post_id = req.params.id;
 

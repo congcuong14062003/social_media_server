@@ -4,45 +4,29 @@ import { generateId } from "../../ultils/crypto.js";
 class Notice {
   constructor(data) {
     this.notice_id = data.notice_id || generateId("notice_");
-    this.user_create_notice = data.user_create_notice;
-    this.user_id = data.user_id;
+    this.sender_id = data.sender_id;
+    this.receiver_id = data.receiver_id;
     this.content = data.content;
-    this.type = data.type;
-    this.is_read = data.is_read || false;
-    this.target_id = data.target_id || null;
+    this.link_notice = data.link_notice || null;
   }
 
   // Thêm thông báo mới
   async create() {
     try {
       const query = `
-        INSERT INTO Notice (notice_id, user_create_notice, user_id, content, type, target_id, created_at, is_read)
-        VALUES (?, ?, ?, ?, ?, ?, NOW(), ?);
+        INSERT INTO Notice (notice_id, sender_id, receiver_id, content, link_notice, created_at)
+        VALUES (?, ?, ?, ?, ?, NOW());
       `;
       const [result] = await pool.execute(query, [
         this.notice_id,
-        this.user_create_notice,
-        this.user_id,
+        this.sender_id,
+        this.receiver_id,
         this.content,
-        this.type,
-        this.target_id,
-        this.is_read,
+        this.link_notice,
       ]);
       return result.affectedRows > 0;
     } catch (error) {
       console.error("Lỗi khi tạo thông báo:", error);
-      throw error;
-    }
-  }
-
-  // Cập nhật trạng thái đọc của thông báo
-  static async markAsRead(notice_id) {
-    try {
-      const query = `UPDATE Notice SET is_read = TRUE WHERE notice_id = ?;`;
-      const [result] = await pool.execute(query, [notice_id]);
-      return result.affectedRows > 0;
-    } catch (error) {
-      console.error("Lỗi khi cập nhật trạng thái đọc thông báo:", error);
       throw error;
     }
   }
@@ -58,10 +42,10 @@ class Notice {
       throw error;
     }
   }
-  static async deleteAllNoticeByUser(user_id) {
+  static async deleteAllNoticeByUser(receiver_id) {
     try {
-      const query = `DELETE FROM Notice WHERE user_id = ?;`;
-      const [result] = await pool.execute(query, [user_id]);
+      const query = `DELETE FROM Notice WHERE receiver_id = ?;`;
+      const [result] = await pool.execute(query, [receiver_id]);
       return result.affectedRows > 0;
     } catch (error) {
       console.error("Lỗi khi xóa thông báo:", error);
@@ -69,10 +53,10 @@ class Notice {
     }
   }
   
-  static async deleteAllNoticeCurrentByUser(user_id) {
+  static async deleteAllNoticeCurrentByUser(receiver_id) {
     try {
-      const query = `UPDATE notice SET count_notice = 0 where user_id = ?`;
-      const [result] = await pool.execute(query, [user_id]);
+      const query = `UPDATE notice SET count_notice = 0 where receiver_id = ?`;
+      const [result] = await pool.execute(query, [receiver_id]);
       return result.affectedRows > 0;
     } catch (error) {
       console.error("Lỗi khi xóa thông báo:", error);
@@ -83,14 +67,14 @@ class Notice {
 
 
   // Lấy tất cả thông báo của một người dùng
-  static async getAllByUserId(user_id) {
+  static async getAllByUserId(receiver_id) {
     try {
       const query = `
         SELECT * FROM Notice
-        WHERE user_id = ?
+        WHERE receiver_id = ?
         ORDER BY created_at DESC;
       `;
-      const [results] = await pool.execute(query, [user_id]);
+      const [results] = await pool.execute(query, [receiver_id]);
       return results;
     } catch (error) {
       console.error("Lỗi khi lấy danh sách thông báo:", error);

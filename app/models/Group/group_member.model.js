@@ -155,6 +155,19 @@ class GroupMember extends GroupChannel {
       console.error(error);
     }
   }
+  static async getAllAdminGroup(group_id) {
+    try {
+      const getGroupMembersQuery = `
+                SELECT * FROM GroupMember
+                WHERE group_id = ? and member_role = 1;
+            `;
+      const [result] = await pool.execute(getGroupMembersQuery, [group_id]);
+      return result;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
 
   static async getAllGroupByMemberID(member_id) {
     try {
