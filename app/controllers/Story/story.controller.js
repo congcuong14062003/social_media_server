@@ -15,8 +15,15 @@ const createStory = async (req, res) => {
       media_link: mediaUrl.url,
       story_privacy: story_privacy,
     });
-    await story.create();
-    res.status(200).json({ status: true });
+    const story_id = await story.create(); // Nhận story_id sau khi tạo
+    if (story_id) {
+      res.status(200).json({ status: true, story_id: story_id });
+    } else {
+      res.status(500).json({
+        status: false,
+        message: "Không thể tạo story",
+      });
+    }
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({

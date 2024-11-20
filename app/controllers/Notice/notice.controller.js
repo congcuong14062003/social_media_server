@@ -19,6 +19,7 @@ const createNotice = async (req, res) => {
   }
 };
 
+
 // Cập nhật trạng thái đọc của thông báo
 const markNoticeAsRead = async (req, res) => {
   const notice_id = req.params.id;
@@ -50,7 +51,35 @@ const deleteNotice = async (req, res) => {
     res.status(500).json({ status: false, message: "Đã xảy ra lỗi, vui lòng thử lại sau" });
   }
 };
+const deleleAllNotice = async (req, res) => {
+  const user_id = req.body.data?.user_id;
+  try {
+    const isDeleted = await Notice.deleteAllNoticeByUser(user_id);
+    if (isDeleted) {
+      res.status(200).json({ status: true, message: "Thông báo đã được xoá thành công" });
+    } else {
+      res.status(404).json({ status: false, message: "Không tìm thấy thông báo" });
+    }
+  } catch (error) {
+    console.error("Lỗi khi xoá thông báo:", error);
+    res.status(500).json({ status: false, message: "Đã xảy ra lỗi, vui lòng thử lại sau" });
+  }
+};
 
+const deleleAllNoticeCurrent = async (req, res) => {
+  const user_id = req.body.data?.user_id;
+  try {
+    const isDeleted = await Notice.deleteAllNoticeCurrentByUser(user_id);
+    if (isDeleted) {
+      res.status(200).json({ status: true});
+    } else {
+      res.status(404).json({ status: false});
+    }
+  } catch (error) {
+    console.error("Lỗi khi xoá thông báo:", error);
+    res.status(500).json({ status: false, message: "Đã xảy ra lỗi, vui lòng thử lại sau" });
+  }
+};
 // Lấy danh sách thông báo của người dùng
 const listNoticesByUser = async (req, res) => {
   const user_id = req.body?.data?.user_id;
@@ -92,6 +121,8 @@ export {
   createNotice,
   markNoticeAsRead,
   deleteNotice,
+  deleleAllNotice,
+  deleleAllNoticeCurrent,
   listNoticesByUser,
   getNoticeById,
 };

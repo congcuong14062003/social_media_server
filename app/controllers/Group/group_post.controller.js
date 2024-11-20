@@ -17,9 +17,13 @@ const createGroupPost = async (req, res) => {
       });
     }
 
-
     // Tạo bài đăng mới
-    const groupPost = new GroupPost({ group_id, post_id, member_id, status: 0 });
+    const groupPost = new GroupPost({
+      group_id,
+      post_id,
+      member_id,
+      status: 0,
+    });
     const group_post_id = await groupPost.create();
 
     if (!group_post_id) {
@@ -43,31 +47,33 @@ const createGroupPost = async (req, res) => {
 };
 
 const getAllAcceptedGroupPosts = async (req, res) => {
-    const group_id = req.params?.group_id;
+  const group_id = req.params?.group_id;
   try {
     const posts = await GroupPost.getAllGroupPostsAccepted(group_id);
-    console.log("postssssssss: ", posts);
-    
-     // Lấy tất cả media cho từng bài viết
-     const mediaPromises = posts.map(async (post) => {
-        const postContent = await Post.getPostById(post?.post_id);
-        const media = await PostMedia.getAllMediaByPostId(post?.post_id);
-        const reacts = await PostReact.getAllReactByPost(post?.post_id);
-        return {
-          ...postContent, // Spread thông tin từ bài viết
-          reacts,
-          media, // Thêm media vào bài viết
-        };
-      });
-  
-      // Đợi tất cả các promise media hoàn thành
-      const postsWithMedia = await Promise.all(mediaPromises);
+
+    // Lấy tất cả media cho từng bài viết
+    const mediaPromises = posts.map(async (post) => {
+      const postContent = await Post.getPostById(post?.post_id);
+      const media = await PostMedia.getAllMediaByPostId(post?.post_id);
+      const reacts = await PostReact.getAllReactByPost(post?.post_id);
+      return {
+        ...post,
+        ...postContent, // Spread thông tin từ bài viết
+        reacts,
+        media, // Thêm media vào bài viết
+      };
+    });
+
+    // Đợi tất cả các promise media hoàn thành
+    const postsWithMedia = await Promise.all(mediaPromises);
+    // Sắp xếp theo `created_at` giảm dần
+    postsWithMedia.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
     res.status(200).json({
       status: true,
       data: postsWithMedia,
     });
-    console.log("postsWithMedia: ", postsWithMedia);
-    
   } catch (error) {
     console.error("Error fetching accepted group posts:", error);
     res.status(500).json({
@@ -78,58 +84,59 @@ const getAllAcceptedGroupPosts = async (req, res) => {
 };
 
 const getAllUnapprovedGroupPosts = async (req, res) => {
-    const group_id = req.params?.group_id;
-    try {
-      const posts = await GroupPost.getAllGroupPostsUnapproved(group_id);
-      console.log("postssssssss: ", posts);
-      
-       // Lấy tất cả media cho từng bài viết
-       const mediaPromises = posts.map(async (post) => {
-          const postContent = await Post.getPostById(post?.post_id);
-          const media = await PostMedia.getAllMediaByPostId(post?.post_id);
-          const reacts = await PostReact.getAllReactByPost(post?.post_id);
-          return {
-            ...postContent, // Spread thông tin từ bài viết
-            reacts,
-            media, // Thêm media vào bài viết
-          };
-        });
-    
-        // Đợi tất cả các promise media hoàn thành
-        const postsWithMedia = await Promise.all(mediaPromises);
-      res.status(200).json({
-        status: true,
-        data: postsWithMedia,
-      });
-      console.log("postsWithMedia: ", postsWithMedia);
-      
-    } catch (error) {
-      console.error("Error fetching accepted group posts:", error);
-      res.status(500).json({
-        status: false,
-        message: "Đã xảy ra lỗi, vui lòng thử lại sau.",
-      });
-    }
+  const group_id = req.params?.group_id;
+  try {
+    const posts = await GroupPost.getAllGroupPostsUnapproved(group_id);
+
+    // Lấy tất cả media cho từng bài viết
+    const mediaPromises = posts.map(async (post) => {
+      const postContent = await Post.getPostById(post?.post_id);
+      const media = await PostMedia.getAllMediaByPostId(post?.post_id);
+      const reacts = await PostReact.getAllReactByPost(post?.post_id);
+      return {
+        ...post,
+        ...postContent, // Spread thông tin từ bài viết
+        reacts,
+        media, // Thêm media vào bài viết
+      };
+    });
+
+    // Đợi tất cả các promise media hoàn thành
+    const postsWithMedia = await Promise.all(mediaPromises);
+    // Sắp xếp theo `created_at` giảm dần
+    postsWithMedia.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+    res.status(200).json({
+      status: true,
+      data: postsWithMedia,
+    });
+  } catch (error) {
+    console.error("Error fetching accepted group posts:", error);
+    res.status(500).json({
+      status: false,
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau.",
+    });
+  }
 };
 
 const updateGroupPostStatus = async (req, res) => {
-  const group_post_id = req.params?.group_post_id;
-  const { status } = req.body;
+  // const group_post_id = req.params?.group_post_id;
+  const { status_post, group_post_id } = req.body;
 
   try {
-    if (!group_post_id || typeof status === "undefined") {
+    if (!group_post_id || status_post === null) {
       return res.status(400).json({
         status: false,
         message: "group_post_id và trạng thái không được để trống!",
       });
     }
 
-    const isUpdated = await GroupPost.updateGroupPost(group_post_id, status);
+    const isUpdated = await GroupPost.updateGroupPost(group_post_id, status_post);
 
     if (isUpdated) {
       return res.status(200).json({
         status: true,
-        message: status === 1 ? "Phê duyệt bài đăng thành công!" : "Xóa bài đăng thành công!",
       });
     }
 

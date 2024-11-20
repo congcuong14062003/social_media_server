@@ -1,5 +1,7 @@
 import uploadFile from "../../../configs/cloud/cloudinary.config";
 import pool from "../../../configs/database/database";
+import GroupChannel from "../../models/Group/group_channel.model";
+import GroupPost from "../../models/Group/group_post.model";
 import Post from "../../models/Post/post.model";
 import PostMedia from "../../models/Post/post_media.model";
 import PostReact from "../../models/Post/post_react.model";
@@ -79,7 +81,11 @@ const createPost = async (req, res) => {
 
     res
       .status(200)
-      .json({ status: true, message: "Bài viết đã được tạo thành công", post_id: postId });
+      .json({
+        status: true,
+        message: "Bài viết đã được tạo thành công",
+        post_id: postId,
+      });
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({
@@ -211,17 +217,23 @@ const listPost = async (req, res) => {
 
     // Lấy tất cả media cho từng bài viết
     const mediaPromises = posts.map(async (post) => {
+      const postGroup = await GroupPost.getGroupPostByPostId(post?.post_id);
+
       const media = await PostMedia.getAllMediaByPostId(post?.post_id);
       const reacts = await PostReact.getAllReactByPost(post?.post_id);
+      const infor_group = await GroupChannel.getGroupByGroupId(postGroup?.group_id);
       return {
         ...post, // Spread thông tin từ bài viết
         reacts,
         media, // Thêm media vào bài viết
+        postGroup,
+        infor_group
       };
     });
 
     // Đợi tất cả các promise media hoàn thành
     const postsWithMedia = await Promise.all(mediaPromises);
+    console.log("dataaaaaa postttttt:", mediaPromises);
 
     // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media
     res.status(200).json({
@@ -245,7 +257,12 @@ const getPostById = async (req, res) => {
 
     // Nếu không tìm thấy bài viết, trả về 404
     if (!post) {
-      return res.status(404).json({ status: false, message: "Bài viết không tồn tại hoặc đã bị xoá" });
+      return res
+        .status(404)
+        .json({
+          status: false,
+          message: "Bài viết không tồn tại hoặc đã bị xoá",
+        });
     }
 
     // Lấy danh sách media cho bài viết
@@ -306,11 +323,9 @@ const listPostById = async (req, res) => {
 
     // Đợi tất cả các promise media và reacts hoàn thành
     const postsWithMediaAndReact = await Promise.all(mediaAndReactPromises);
-    if(postsWithMediaAndReact.length > 0) {
-
+    if (postsWithMediaAndReact.length > 0) {
       res.status(200).json({ status: true, data: postsWithMediaAndReact });
-    }
-    else {
+    } else {
       res.status(200).json({ status: true, data: [] });
     }
     // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media và reacts

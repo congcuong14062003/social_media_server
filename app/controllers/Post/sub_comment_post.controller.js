@@ -4,7 +4,6 @@ import SubPostComment from "../../models/Post/sub_comment_post.model";
 // Tạo bình luận cấp 2
 const createSubCommentByCommentId = async (req, res) => {
   const comment_id = req.params.id; // Lấy comment_id từ URL params
-  console.log("comment_id: ", comment_id);
   
   const file = req.files?.[0]; // Kiểm tra xem có file không
   const { replying_user_id, comment_text, media_type } = req.body; // Lấy dữ liệu từ request body
@@ -13,7 +12,6 @@ const createSubCommentByCommentId = async (req, res) => {
 
   if (file) {
     try {
-      console.log("Vào sub");
       const media_link_url = await uploadFile(
         file,
         process.env.NAME_FOLDER_POST

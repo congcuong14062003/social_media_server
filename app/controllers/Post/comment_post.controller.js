@@ -7,7 +7,6 @@ const createCommentPostById = async (req, res) => {
   const file = req.files?.[0]; // Kiểm tra xem có file không
   const { commenting_user_id, comment_text, media_type } = req.body;
 
-  console.log(commenting_user_id, comment_text, media_type);
 
   let media_link = null; // Đặt mặc định là null
 

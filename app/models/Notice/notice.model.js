@@ -58,6 +58,29 @@ class Notice {
       throw error;
     }
   }
+  static async deleteAllNoticeByUser(user_id) {
+    try {
+      const query = `DELETE FROM Notice WHERE user_id = ?;`;
+      const [result] = await pool.execute(query, [user_id]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error("Lỗi khi xóa thông báo:", error);
+      throw error;
+    }
+  }
+  
+  static async deleteAllNoticeCurrentByUser(user_id) {
+    try {
+      const query = `UPDATE notice SET count_notice = 0 where user_id = ?`;
+      const [result] = await pool.execute(query, [user_id]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error("Lỗi khi xóa thông báo:", error);
+      throw error;
+    }
+  }
+
+
 
   // Lấy tất cả thông báo của một người dùng
   static async getAllByUserId(user_id) {

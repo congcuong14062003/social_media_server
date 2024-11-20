@@ -65,19 +65,50 @@ class GroupPost {
     }
   }
 
+  static async getGroupPostByPostId(post_id) {
+    try {
+      const query = `SELECT * FROM GroupPost WHERE post_id = ?;`;
+      const [result] = await pool.execute(query, [post_id]);
+      return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  static async getGroupPostAcceptedByPostId(post_id) {
+    try {
+      const query = `SELECT * FROM GroupPost WHERE post_id = ? and status = 1;`;
+      const [result] = await pool.execute(query, [post_id]);
+      return result[0];
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  // Lấy bài đăng nhóm theo ID
+  static async getGroupPostByUserId(member_id) {
+    try {
+      const query = `SELECT * FROM GroupPost WHERE member_id = ?;`;
+      const [result] = await pool.execute(query, [member_id]);
+      return result;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   // Cập nhật bài đăng nhóm
   static async updateGroupPost(group_post_id, status) {
+    console.log("aaaaa:",group_post_id, status);
+
     let query = `
        UPDATE GroupPost
        SET status = 1
        WHERE group_post_id = ?;
      `;
+     
     if (status === 0) {
       query = "DELETE FROM GroupPost WHERE group_post_id = ?;";
     }
-
     try {
-      const [result] = await pool.execute(query, group_post_id);
+      const [result] = await pool.execute(query, [group_post_id]);
       return result.affectedRows > 0;
     } catch (error) {
       console.error(error);

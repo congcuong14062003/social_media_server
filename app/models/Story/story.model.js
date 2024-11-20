@@ -24,7 +24,7 @@ class Story {
       ]);
 
       if (result.affectedRows > 0) {
-        return true;
+        return story_id; // Trả về story_id khi tạo thành công
       }
       return false;
     } catch (error) {

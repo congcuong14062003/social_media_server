@@ -1,5 +1,7 @@
 import GroupChannel from "../../models/Group/group_channel.model";
 import GroupMember from "../../models/Group/group_member.model";
+import { ProfileMedia } from "../../models/User/profile_media.model";
+import { Users } from "../../models/User/users.model";
 
 export const getGroupsByUserID = async (req, res) => {
   try {
@@ -12,8 +14,6 @@ export const getGroupsByUserID = async (req, res) => {
           await GroupChannel.getGroupByGroupId(group_id?.group_id)
       )
     );
-    console.log("groupsID: ", groupsID);
-    
     res.status(200).json({ status: true, data: listGroups });
   } catch (error) {
     console.log(error);
@@ -46,46 +46,92 @@ export const getMemberGroupsByGroupID = async (req, res) => {
 export const getMemberGroupsOfficalByGroupID = async (req, res) => {
   try {
     const groupId = req.params?.id;
+
+    // Kiểm tra ID group
     if (!groupId) {
       return res
         .status(400)
         .json({ status: false, message: "Group này không tồn tại" });
     }
 
+    // Lấy danh sách các thành viên chính thức
     const groupMembers = await GroupMember.getAllOfficialMemberByGroupId(
       groupId
     );
 
-    if (groupMembers.length) {
-      return res.status(200).json({ status: true, data: groupMembers });
+    // Nếu không có thành viên nào, trả về rỗng
+    if (!groupMembers.length) {
+      return res.status(200).json({ status: true, data: [] });
     }
+
+    // Hợp nhất thông tin thành viên và media
+    const mergedData = await Promise.all(
+      groupMembers.map(async (member) => {
+        const inforMember = await Users.getById(member.member_id);
+        const mediaMember = await ProfileMedia.getLatestAvatarById(member.member_id);
+
+        // Hợp nhất dữ liệu
+        return {
+          ...member,
+          user_name: inforMember.user_name,
+          avatar: mediaMember || null,
+        };
+      })
+    );
+
+    // Trả về dữ liệu hợp nhất
+    return res.status(200).json({ status: true, data: mergedData });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     return res.status(404).json({ status: false, message: error.message });
   }
 };
 
+
 export const getMemberGroupsUnapprovedByGroupID = async (req, res) => {
   try {
     const groupId = req.params?.id;
+
+    // Kiểm tra ID group
     if (!groupId) {
       return res
         .status(400)
         .json({ status: false, message: "Group này không tồn tại" });
     }
 
+    // Lấy danh sách các thành viên chưa được phê duyệt
     const groupMembers = await GroupMember.getAllMemberUnapprovedByGroupId(
       groupId
     );
-    if (groupMembers.length) {
-      return res.status(200).json({ status: true, data: groupMembers });
-    }
-  } catch (error) {
-    console.log(error);
 
+    // Nếu không có thành viên nào, trả về rỗng
+    if (!groupMembers.length) {
+      return res.status(200).json({ status: true, data: [] });
+    }
+
+    // Lấy thông tin chi tiết từ các nguồn khác
+    const mergedData = await Promise.all(
+      groupMembers.map(async (member) => {
+        const inforMember = await Users.getById(member.member_id);
+        const mediaMember = await ProfileMedia.getLatestAvatarById(member.member_id);
+
+        // Hợp nhất dữ liệu
+        return {
+          ...member,
+          user_name: inforMember.user_name,
+          avatar: mediaMember || null,
+        };
+      })
+    );
+
+    // Trả về dữ liệu hợp nhất
+    return res.status(200).json({ status: true, data: mergedData });
+  } catch (error) {
+    console.error(error);
     return res.status(404).json({ status: false, message: error.message });
   }
 };
+
 
 export const checkRoleMember = async (req, res) => {
   try {
@@ -209,7 +255,7 @@ export const setAdminGroup = async (req, res) => {
 
     const isUpdate = await GroupMember.updateSetAdmin(member_id, groupId);
     if (isUpdate > 0) {
-      return res.status(200).json({ status: true });
+      return res.status(200).json({ status: true});
     }
     res
       .status(404)

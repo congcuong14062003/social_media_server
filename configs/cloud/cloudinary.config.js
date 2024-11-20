@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { generateId } from "../../app/ultils/crypto";
 require("dotenv").config();
 
 cloudinary.config({
@@ -23,7 +24,7 @@ const uploadFile = async (file, folder) => {
     const options = {
       folder: folder,
       resource_type: resourceType,
-      public_id: file.originalname, // Lấy tên gốc không đuôi mở rộng
+      public_id: generateId("file_"), // Lấy tên gốc không đuôi mở rộng
       ...(resourceType === "auto" && {
         transformation: [
           { quality: "auto" },

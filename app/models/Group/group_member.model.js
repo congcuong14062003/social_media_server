@@ -130,7 +130,7 @@ class GroupMember extends GroupChannel {
     }
   }
 
-  static async getAllMemberUnapprovepoolyGroupId(group_id) {
+  static async getAllMemberUnapprovedByGroupId(group_id) {
     try {
       const getGroupMembersQuery = `
                 SELECT * FROM GroupMember

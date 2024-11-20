@@ -210,8 +210,6 @@ const deleteMessenger = async (req, res) => {
 
 // Hàm deleteMessengerByOwnerSide trong controller
 const deleteMessengerByOwnerSide = async (req, res) => {
-  console.log(123);
-
   try {
     const user_id = req.body?.data?.user_id;
     const messenger_id = req.params?.messenger_id;
