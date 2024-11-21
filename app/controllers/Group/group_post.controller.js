@@ -1,3 +1,4 @@
+import GroupChannel from "../../models/Group/group_channel.model";
 import GroupPost from "../../models/Group/group_post.model";
 import Post from "../../models/Post/post.model";
 import PostMedia from "../../models/Post/post_media.model";
@@ -82,6 +83,43 @@ const getAllAcceptedGroupPosts = async (req, res) => {
     });
   }
 };
+const getAllGroupPosts = async (req, res) => {
+  const user_id = req.body?.data?.user_id;
+  try {
+    const posts = await GroupPost.getAllGroupPostJoined(user_id);
+    // Lấy tất cả media cho từng bài viết
+    const mediaPromises = posts.map(async (post) => {
+      const infor_group = await GroupChannel.getGroupByGroupId(post?.group_id);
+      const postContent = await Post.getPostById(post?.post_id);
+      const media = await PostMedia.getAllMediaByPostId(post?.post_id);
+      const reacts = await PostReact.getAllReactByPost(post?.post_id);
+      return {
+        ...post,
+        ...postContent, // Spread thông tin từ bài viết
+        infor_group,
+        reacts,
+        media, // Thêm media vào bài viết
+      };
+    });
+
+    // Đợi tất cả các promise media hoàn thành
+    const postsWithMedia = await Promise.all(mediaPromises);
+    // Sắp xếp theo `created_at` giảm dần
+    postsWithMedia.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+    res.status(200).json({
+      status: true,
+      data: postsWithMedia,
+    });
+  } catch (error) {
+    console.error("Error fetching accepted group posts:", error);
+    res.status(500).json({
+      status: false,
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau.",
+    });
+  }
+};
 
 const getAllUnapprovedGroupPosts = async (req, res) => {
   const group_id = req.params?.group_id;
@@ -121,8 +159,7 @@ const getAllUnapprovedGroupPosts = async (req, res) => {
 };
 
 const updateGroupPostStatus = async (req, res) => {
-  // const group_post_id = req.params?.group_post_id;
-  const { status_post, group_post_id } = req.body;
+  const { status_post, group_post_id, post_id } = req.body;
 
   try {
     if (!group_post_id || status_post === null) {
@@ -132,7 +169,12 @@ const updateGroupPostStatus = async (req, res) => {
       });
     }
 
-    const isUpdated = await GroupPost.updateGroupPost(group_post_id, status_post);
+    // Gọi phương thức cập nhật trạng thái
+    const isUpdated = await GroupPost.updateGroupPost(
+      group_post_id,
+      status_post,
+      post_id
+    );
 
     if (isUpdated) {
       return res.status(200).json({
@@ -158,4 +200,5 @@ export {
   getAllAcceptedGroupPosts,
   getAllUnapprovedGroupPosts,
   updateGroupPostStatus,
+  getAllGroupPosts,
 };

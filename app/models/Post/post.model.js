@@ -67,7 +67,8 @@ SELECT
     u.user_id, 
     u.user_name, 
     up.media_link AS avatar,
-    p.created_at 
+    p.created_at,
+    gp.status AS group_status
 FROM 
     Post p
 JOIN 
@@ -87,13 +88,15 @@ LEFT JOIN (
             GROUP BY user_id
         )
 ) up ON u.user_id = up.user_id
+LEFT JOIN 
+    GroupPost gp ON p.post_id = gp.post_id
 WHERE 
-    (p.user_id = ? AND p.post_privacy IN (0, 1))  -- Lấy bài viết của người dùng hiện tại với phạm vi 0 hoặc 1
-    OR (p.user_id != ? AND p.post_privacy = 1)    -- Lấy bài viết của người khác chỉ khi phạm vi là 1
+    ((p.user_id = ? AND p.post_privacy IN (0, 1)) -- Bài viết của người dùng hiện tại
+    OR (p.user_id != ? AND p.post_privacy = 1))  -- Bài viết của người khác, công khai
+    AND (gp.status IS NULL OR gp.status = 1) -- Lọc bài viết nhóm đã được duyệt
 ORDER BY 
     p.created_at DESC;
   `;
-
     try {
       const [results] = await pool.execute(query, [my_id, my_id]); // Truyền my_id vào 2 lần
       return results;
@@ -103,40 +106,39 @@ ORDER BY
     }
   }
 
-
   // static async getAllPosts(my_id) {
-  //   const list_post_id_group = await GroupPost.getGroupPostByUserId(my_id); 
+  //   const list_post_id_group = await GroupPost.getGroupPostByUserId(my_id);
   //   const excludedPostIds = list_post_id_group?.map((item) => item.post_id);
-  
+
   //   // Xử lý chuỗi `post_id`
   //   const excludedPostIdsString = excludedPostIds
   //     .map((id) => `'${id}'`) // Bọc id trong dấu nháy đơn nếu cần
-  //     .join(","); 
-  
+  //     .join(",");
+
   //   const query = `
-  //     SELECT 
-  //         p.post_id, 
-  //         p.post_text, 
-  //         p.post_privacy, 
+  //     SELECT
+  //         p.post_id,
+  //         p.post_text,
+  //         p.post_privacy,
   //         p.react_emoji,
-  //         u.user_id, 
-  //         u.user_name, 
+  //         u.user_id,
+  //         u.user_name,
   //         up.media_link AS avatar,
-  //         p.created_at 
-  //     FROM 
+  //         p.created_at
+  //     FROM
   //         Post p
-  //     JOIN 
+  //     JOIN
   //         users u ON p.user_id = u.user_id
   //     LEFT JOIN (
-  //         SELECT 
-  //             user_id, 
+  //         SELECT
+  //             user_id,
   //             media_link
-  //         FROM 
+  //         FROM
   //             ProfileMedia
-  //         WHERE 
-  //             media_type = 'avatar' 
+  //         WHERE
+  //             media_type = 'avatar'
   //             AND (user_id, created_at) IN (
-  //                 SELECT user_id, MAX(created_at) 
+  //                 SELECT user_id, MAX(created_at)
   //                 FROM ProfileMedia
   //                 WHERE media_type = 'avatar'
   //                 GROUP BY user_id
@@ -144,26 +146,26 @@ ORDER BY
   //     ) up ON u.user_id = up.user_id
   //     WHERE (
   //         (
-  //             (p.user_id = ? AND p.post_privacy IN (0, 1)) 
+  //             (p.user_id = ? AND p.post_privacy IN (0, 1))
   //             OR (p.user_id != ? AND p.post_privacy = 1)
   //         )
-  //         ${excludedPostIds.length > 0 
-  //           ? `AND p.post_id NOT IN (${excludedPostIdsString})` 
+  //         ${excludedPostIds.length > 0
+  //           ? `AND p.post_id NOT IN (${excludedPostIdsString})`
   //           : ""}
   //     )
-  //     ORDER BY 
+  //     ORDER BY
   //         p.created_at DESC;
   //   `;
-  
+
   //   try {
-  //     const [results] = await pool.execute(query, [my_id, my_id]); 
+  //     const [results] = await pool.execute(query, [my_id, my_id]);
   //     return results;
   //   } catch (error) {
   //     console.error("Error fetching posts:", error);
   //     throw error;
   //   }
   // }
-  
+
   static async getAllPostsById(user_id) {
     const query = `
       SELECT 

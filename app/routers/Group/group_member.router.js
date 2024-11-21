@@ -1,6 +1,5 @@
 import { Router } from "express";
 
-
 import {
   acceptInviteByMember,
   checkRoleMember,
@@ -8,12 +7,17 @@ import {
   getMemberGroupsByGroupID,
   getMemberGroupsOfficalByGroupID,
   getMemberGroupsUnapprovedByGroupID,
+  leaverGroup,
+  listSuggestGroup,
   refuseInviteByMember,
   sendInviteByMember,
   setAdminGroup,
 } from "../../controllers/Group/group_member.controller";
 import Authentication from "../../middleware/authentication";
-import { Authorization, checkRoleGroup } from "../../middleware/authorization_token";
+import {
+  Authorization,
+  checkRoleGroup,
+} from "../../middleware/authorization_token";
 // Cấu hình router
 const GroupMemberRouter = (router = Router()) => {
   router.get(
@@ -76,6 +80,21 @@ const GroupMemberRouter = (router = Router()) => {
     Authorization,
     checkRoleGroup([1]),
     refuseInviteByMember
+  );
+  // rời nhóm
+  router.post(
+    "/leave-group/:id",
+    Authentication,
+    Authorization,
+    checkRoleGroup([0, 1]),
+    leaverGroup
+  );
+  // danh sách nhóm gợi ý
+  router.get(
+    "/list-suggest-group",
+    Authentication,
+    Authorization,
+    listSuggestGroup
   );
 
   router.get("/check-role/:id", Authentication, Authorization, checkRoleMember);

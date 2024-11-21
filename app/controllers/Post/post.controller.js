@@ -79,13 +79,11 @@ const createPost = async (req, res) => {
       }
     }
 
-    res
-      .status(200)
-      .json({
-        status: true,
-        message: "Bài viết đã được tạo thành công",
-        post_id: postId,
-      });
+    res.status(200).json({
+      status: true,
+      message: "Bài viết đã được tạo thành công",
+      post_id: postId,
+    });
   } catch (error) {
     console.error("Lỗi khi tạo bài viết:", error);
     res.status(500).json({
@@ -217,16 +215,22 @@ const listPost = async (req, res) => {
 
     // Lấy tất cả media cho từng bài viết
     const mediaPromises = posts.map(async (post) => {
-      const postGroup = await GroupPost.getGroupPostAcceptedByPostId(post?.post_id);
+      const postGroup = await GroupPost.getGroupPostAcceptedByPostId(
+        post?.post_id
+      ); // Chỉ lấy bài viết nhóm đã duyệt
+      const infor_group = postGroup
+        ? await GroupChannel.getGroupByGroupId(postGroup?.group_id)
+        : null;
+
       const media = await PostMedia.getAllMediaByPostId(post?.post_id);
       const reacts = await PostReact.getAllReactByPost(post?.post_id);
-      const infor_group = await GroupChannel.getGroupByGroupId(postGroup?.group_id);
+
       return {
-        ...post, // Spread thông tin từ bài viết
+        ...post, // Thông tin bài viết
+        postGroup: postGroup?.status === 1 ? postGroup : null, // Đảm bảo bài viết nhóm phải được duyệt
+        infor_group,
         reacts,
-        media, // Thêm media vào bài viết
-        postGroup,
-        infor_group
+        media,
       };
     });
 
@@ -257,12 +261,10 @@ const getPostById = async (req, res) => {
 
     // Nếu không tìm thấy bài viết, trả về 404
     if (!post) {
-      return res
-        .status(404)
-        .json({
-          status: false,
-          message: "Bài viết không tồn tại hoặc đã bị xoá",
-        });
+      return res.status(404).json({
+        status: false,
+        message: "Bài viết không tồn tại hoặc đã bị xoá",
+      });
     }
 
     // Lấy danh sách media cho bài viết

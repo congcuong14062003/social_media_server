@@ -295,3 +295,55 @@ export const refuseInviteByMember = async (req, res) => {
     res.status(404).json({ status: false, message: error.message });
   }
 };
+// rời nhóm
+export const leaverGroup = async (req, res) => {
+  try {
+    const groupId = req.params?.id;
+
+    const member_id = req.body?.data?.user_id;
+
+    if (!groupId || !member_id) {
+      return res.status(400).json({
+        status: false,
+        message: "Group hoặc thành viên này không tồn tại",
+      });
+    }
+
+    const isRefuse = await GroupMember.updateRefuseInvite(member_id, groupId);
+    if (isRefuse > 0) {
+      return res.status(200).json({ status: true });
+    }
+    res
+      .status(404)
+      .json({
+        status: false,
+        message: "Lỗi khi từ dời nhóm",
+      });
+  } catch (error) {
+    res.status(404).json({ status: false, message: error.message });
+  }
+};
+export const listSuggestGroup = async (req, res) => {
+  try {
+    const user_id = req.body?.data?.user_id;
+
+    if (!user_id) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Thiếu thông tin user_id." });
+    }
+    const groups = await GroupMember.getAllGroupSuggess(user_id);
+    if (!groups || groups.length === 0) {
+      return res
+        .status(404)
+        .json({ status: false });
+    }
+    res.status(200).json({
+      status: true,
+      data: groups,
+    });
+  } catch (error) {
+    res.status(500).json({ status: false, message: error.message });
+  }
+};
+

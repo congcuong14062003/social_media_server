@@ -9,6 +9,22 @@ class GroupMember extends GroupChannel {
     this.member_role = data.member_role;
     this.created_at = data.created_at;
   }
+  static async getAllGroupSuggess(user_id) {
+    try {
+      const query = `
+     SELECT g.group_id
+    FROM GroupChannel g
+    LEFT JOIN GroupMember gm ON g.group_id = gm.group_id AND gm.member_id = ?
+    WHERE gm.member_id IS NULL OR gm.member_status = 0;
+
+      `;
+      const [result] = await pool.execute(query, [user_id]);
+      return result;
+    } catch (error) {
+      console.error(error);
+      throw new Error("Lỗi khi lấy danh sách nhóm gợi ý.");
+    }
+  }
 
   async create() {
     try {
@@ -30,7 +46,6 @@ class GroupMember extends GroupChannel {
 
   static async checkRole(user_id, group_id) {
     try {
-      
       const getGroupMembersQuery = `
                 SELECT * FROM GroupMember
                 WHERE group_id = ? AND member_id = ?;
@@ -39,7 +54,7 @@ class GroupMember extends GroupChannel {
         group_id,
         user_id,
       ]);
-      
+
       if (result[0]?.member_id) {
         return result[0];
       }
@@ -65,7 +80,6 @@ class GroupMember extends GroupChannel {
 
   static async updateAcceptInvite(user_id, group_id) {
     try {
-      
       const getGroupMembersQuery = `
                 UPDATE GroupMember
                 SET member_status = 1, member_role = 0 WHERE group_id = ? AND member_id = ?;
@@ -74,8 +88,8 @@ class GroupMember extends GroupChannel {
         group_id,
         user_id,
       ]);
-      
-     return result.affectedRows;
+
+      return result.affectedRows;
     } catch (error) {
       console.error(error);
     }
@@ -83,7 +97,6 @@ class GroupMember extends GroupChannel {
 
   static async updateSetAdmin(user_id, group_id) {
     try {
-      
       const getGroupMembersQuery = `
                 UPDATE GroupMember
                 SET member_status = 1, member_role = 1 WHERE group_id = ? AND member_id = ?;
@@ -92,8 +105,8 @@ class GroupMember extends GroupChannel {
         group_id,
         user_id,
       ]);
-      
-     return result.affectedRows;
+
+      return result.affectedRows;
     } catch (error) {
       console.error(error);
     }
@@ -101,7 +114,6 @@ class GroupMember extends GroupChannel {
 
   static async updateRefuseInvite(user_id, group_id) {
     try {
-      
       const getGroupMembersQuery = `
                 DELETE FROM GroupMember WHERE group_id = ? AND member_id = ?;
             `;
@@ -109,8 +121,8 @@ class GroupMember extends GroupChannel {
         group_id,
         user_id,
       ]);
-      
-     return result.affectedRows;
+
+      return result.affectedRows;
     } catch (error) {
       console.error(error);
     }
@@ -123,7 +135,7 @@ class GroupMember extends GroupChannel {
                 WHERE group_id = ? AND member_status = 1 ORDER BY member_role DESC;
             `;
       const [result] = await pool.execute(getGroupMembersQuery, [group_id]);
-      
+
       return result;
     } catch (error) {
       console.error(error);
@@ -167,7 +179,6 @@ class GroupMember extends GroupChannel {
       console.error(error);
     }
   }
-
 
   static async getAllGroupByMemberID(member_id) {
     try {

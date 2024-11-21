@@ -44,6 +44,15 @@ class GroupChannel {
       console.error(error);
     }
   }
+  // static async getAllGroupsSuggest() {
+  //   try {
+  //     const getGroupsQuery = `SELECT * FROM GroupChannel where member_id ;`;
+  //     const [result] = await pool.execute(getGroupsQuery);
+  //     return result;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // }
 
   static async getGroupByGroupId(group_id) {
     try {

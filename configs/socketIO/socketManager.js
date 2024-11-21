@@ -99,6 +99,8 @@ const initializeSocket = (httpServer, users) => {
       });
       // // sự kiện trả lời bình luận
       socket.on("sendSubComment", async (data) => {
+        console.log("Có người mới trả lời bình luận của bạn: ", data);
+        
         const { sender_id, receiver_id, content, link_notice, created_at } =
           data;
         // Lấy socketId của người đăng bài từ danh sách người dùng online

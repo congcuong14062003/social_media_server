@@ -1,7 +1,7 @@
 import { Router } from "express";
 import Authentication from "../../middleware/authentication";
 import { Authorization, checkPrivacyGroup, checkRoleGroup } from "../../middleware/authorization_token";
-import { createGroupPost, getAllAcceptedGroupPosts, getAllUnapprovedGroupPosts, updateGroupPostStatus } from "../../controllers/Group/group_post.controller";
+import { createGroupPost, getAllAcceptedGroupPosts, getAllGroupPosts, getAllUnapprovedGroupPosts, updateGroupPostStatus } from "../../controllers/Group/group_post.controller";
 
 // Cấu hình router
 const GroupPostRouter = (router = Router()) => {
@@ -18,6 +18,12 @@ const GroupPostRouter = (router = Router()) => {
     Authorization,
     checkPrivacyGroup,
     getAllAcceptedGroupPosts
+  );
+  router.get(
+    "/list-post-all-group",
+    Authentication,
+    Authorization,
+    getAllGroupPosts
   );
   router.get(
     "/list-post-unapproved/:group_id",

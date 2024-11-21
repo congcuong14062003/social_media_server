@@ -4,6 +4,7 @@ import {
   createGroupChannel,
   deleteGroup,
   getInfoGroupChannel,
+  listSuggestGroup,
   updateGroup,
 } from "../../controllers/Group/group_channel.controller";
 import Authentication from "../../middleware/authentication";
@@ -44,7 +45,7 @@ const GroupChannelRouter = (router = Router()) => {
     checkRoleGroup([1]),
     deleteGroup
   );
-
+ 
   return router;
 };
 
