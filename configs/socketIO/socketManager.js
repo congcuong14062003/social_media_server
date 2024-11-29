@@ -139,6 +139,8 @@ const initializeSocket = (httpServer, users) => {
 
       // Sự kiện đăng bài viết
       socket.on("new_post", async (data) => {
+        console.log("aaaaaaa:", data);
+        
         const { sender_id, link_notice, content, created_at } = data;
         const friends = await Friend.getAllFriends(sender_id);
         if (friends.length > 0) {
@@ -163,7 +165,6 @@ const initializeSocket = (httpServer, users) => {
                 link_notice,
                 created_at,
               });
-
               try {
                 const isCreated = await newNotice.create(); // Gọi phương thức create để lưu thông báo
                 if (isCreated) {
@@ -413,6 +414,75 @@ const initializeSocket = (httpServer, users) => {
         }
       });
 
+      // lắng nghe sự kiện chấp nhận duyệt bài viết
+      socket.on("accept_post", async (data) => {
+        const { sender_id, receiver_id, content, link_notice, created_at } =
+          data;
+        const receiverSocketId = getSocketIdByUserId(receiver_id, users);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("receiver_notify", {
+            sender_id,
+            receiver_id,
+            content,
+            link_notice,
+            created_at,
+          });
+        } else {
+          // Người đăng bài offline, lưu thông báo vào DB
+          const newNotice = new Notice({
+            sender_id,
+            receiver_id,
+            content,
+            link_notice,
+            created_at,
+          });
+          try {
+            const isCreated = await newNotice.create(); // Lưu thông báo vào DB
+            if (isCreated) {
+              console.log(
+                `Lưu thông báo cho người nhận offline: ${receiver_id}`
+              );
+            }
+          } catch (error) {
+            console.error("Lỗi khi lưu thông báo bình luận:", error);
+          }
+        }
+      });
+      
+      // lắng nghe sự kiện từ chối duyệt bài viết
+      socket.on("declined_post", async (data) => {
+        const { sender_id, receiver_id, content, link_notice, created_at } =
+          data;
+        const receiverSocketId = getSocketIdByUserId(receiver_id, users);
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("receiver_notify", {
+            sender_id,
+            receiver_id,
+            content,
+            link_notice,
+            created_at,
+          });
+        } else {
+          // Người đăng bài offline, lưu thông báo vào DB
+          const newNotice = new Notice({
+            sender_id,
+            receiver_id,
+            content,
+            link_notice,
+            created_at,
+          });
+          try {
+            const isCreated = await newNotice.create(); // Lưu thông báo vào DB
+            if (isCreated) {
+              console.log(
+                `Lưu thông báo cho người nhận offline: ${receiver_id}`
+              );
+            }
+          } catch (error) {
+            console.error("Lỗi khi lưu thông báo bình luận:", error);
+          }
+        }
+      });
       
       // lắng nghe sự kiện từ chối tham gia nhóm
       socket.on("decline_join_group", async (data) => {

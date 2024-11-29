@@ -258,7 +258,12 @@ const getPostById = async (req, res) => {
   try {
     // Lấy thông tin chi tiết của bài viết
     const post = await Post.getPostById(post_id);
-
+    const postGroup = await GroupPost.getGroupPostAcceptedByPostId(
+      post_id
+    ); // Chỉ lấy bài viết nhóm đã duyệt
+    const infor_group = postGroup
+      ? await GroupChannel.getGroupByGroupId(postGroup?.group_id)
+      : null;
     // Nếu không tìm thấy bài viết, trả về 404
     if (!post) {
       return res.status(404).json({
@@ -278,6 +283,8 @@ const getPostById = async (req, res) => {
       ...post, // Thông tin bài viết
       media, // Danh sách media
       reacts, // Danh sách react
+      postGroup,
+      infor_group, // Thông tin nhóm bài viết
     };
 
     // Trả về phản hồi thành công với chi tiết bài viết
