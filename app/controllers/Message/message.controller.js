@@ -15,7 +15,6 @@ const createMessage = async (req, res) => {
     const reply_id = req.body?.reply_id ?? null;
     const name_file = req.body?.name_file ?? "";
     console.log(files[0]);
-
     // const friendHasKey = await UserKeyPair.getKeyPair(friend_id);
     // if (!friendHasKey) {
     //   return res.status(401).json({
@@ -65,8 +64,6 @@ const createMessage = async (req, res) => {
         reply_id: reply_id,
         created_at: new Date()
       });
-      io.to(getSocketIdByUserId(friend_id, users)).emit("updateMessage");
-      io.to(getSocketIdByUserId(user_id, users)).emit("updateMessage");
       return res.status(201).json({ status: true });
     } else {
       return res

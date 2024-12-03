@@ -55,7 +55,7 @@ const initializeSocket = (httpServer, users) => {
         }
       });
       // Lắng nghe sự kiện xoá tin nhắn từ client
-      socket.on("message_deleted", ({ messageId }) => {
+      socket.on("message_delete", ({ messageId }) => {
         // Phát lại sự kiện đến các client liên quan (cả người gửi và người nhận)
         io.emit("message_deleted", { messageId });
       });
@@ -544,33 +544,25 @@ const initializeSocket = (httpServer, users) => {
         }
       });
       // Lắng nghe sự kiện kết thúc cuộc gọi
-      socket.on("endCall", (data) => {
-        const { room_id, receiver_id, sender_id } = data;
+      socket.on('endCall', (data) => {
+        // Ensure you send the event to the other user in the call
+        const { receiver_id, sender_id } = data;
 
-        // Lấy socketId của người nhận
+        // Find the other user based on their ID and socket ID
         const receiverSocketId = getSocketIdByUserId(receiver_id, users);
-
-        if (receiverSocketId) {
-          // Phát sự kiện kết thúc cuộc gọi đến người nhận
-          io.to(receiverSocketId).emit("callEnded", {
-            message: "The caller has ended the call",
-            room_id,
-          });
-        } else {
-          console.error(`No socket found for user ID: ${receiver_id}`);
-        }
-
-        // Tương tự, nếu bạn muốn gửi sự kiện này đến người gọi (để đảm bảo cả 2 phía đều xử lý),
         const senderSocketId = getSocketIdByUserId(sender_id, users);
-        if (senderSocketId) {
-          io.to(senderSocketId).emit("callEnded", {
-            message: "You have ended the call",
-            room_id,
-          });
-        } else {
-          console.error(`No socket found for user ID: ${sender_id}`);
+
+        // Emit the "endCall" event to the other user
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('callEnded', { message: 'The call has ended.' });
         }
-      });
+
+        if (senderSocketId) {
+            io.to(senderSocketId).emit('callEnded', { message: 'The call has ended.' });
+        }
+
+        console.log(`Call ended between user ${sender_id} and ${receiver_id}`);
+    });
 
       // Chuỗi sự kiện với Peer
 
