@@ -3,7 +3,8 @@ import uploadFile from "../../../configs/cloud/cloudinary.config";
 import pool from "../../../configs/database/database";
 import { getSocketIdByUserId } from "../../../configs/socketIO/socketManager";
 import Message from "../../models/Message/message.model";
-import { UserKeyPair } from "../../models/User/users.model";
+import { ProfileMedia } from "../../models/User/profile_media.model";
+import { UserKeyPair, Users } from "../../models/User/users.model";
 import { decryptWithPrivateKey } from "../../ultils/crypto";
 const createMessage = async (req, res) => {
   try {
@@ -14,14 +15,15 @@ const createMessage = async (req, res) => {
     const content_type = req.body?.content_type ?? "";
     const reply_id = req.body?.reply_id ?? null;
     const name_file = req.body?.name_file ?? "";
-    console.log(files[0]);
-    // const friendHasKey = await UserKeyPair.getKeyPair(friend_id);
-    // if (!friendHasKey) {
-    //   return res.status(401).json({
-    //     status: false,
-    //     message: "Bạn bè chưa thiết lập tin nhắn vui lòng thử lại sau",
-    //   });
-    // }
+
+    const friendHasKey = await UserKeyPair.getKeyPair(friend_id);
+    if (!friendHasKey) {
+      return res.status(401).json({
+        status: false,
+        message: "Bạn bè chưa thiết lập tin nhắn vui lòng thử lại sau",
+      });
+    }
+
     if (files.length > 0) {
       content_text = (
         await uploadFile(files[0], process.env.NAME_FOLDER_MESSENGER)
@@ -42,15 +44,25 @@ const createMessage = async (req, res) => {
       content_type: content_type,
       reply_id: reply_id,
       name_file: name_file,
-      created_at: new Date()
+      created_at: new Date(),
     });
+
+    // Lấy thông tin của người gửi và người nhận
+    const inforSender = await Users.getById(user_id);
+    const sender_avatar = await ProfileMedia.getLatestAvatarById(user_id);
+
+
+    const inforReceiver = await Users.getById(friend_id);
+    const receiver_avatar = await ProfileMedia.getLatestAvatarById(friend_id);
 
     // Attempt to create the message in the database
     const result = await newMessage.create(content_text);
 
     // Respond based on the result of the message creation
     if (result) {
-      // Send message to receiver regardless of database result
+      // Khi bạn là người gửi (sender_id là user_id), hiển thị thông tin của người bạn (người nhận tin nhắn)
+
+      // Gửi tin nhắn cho cả người gửi và người nhận
       io.to([
         getSocketIdByUserId(friend_id, users),
         getSocketIdByUserId(user_id, users),
@@ -61,9 +73,14 @@ const createMessage = async (req, res) => {
         content_text: content_text,
         content_type: content_type,
         name_file: name_file,
+        // user_name: inforSender?.user_name,
+        // user_avatar: sender_avatar,
+        // friend_name: inforReceiver?.user_name,
+        // friend_avatar: receiver_avatar,
         reply_id: reply_id,
-        created_at: new Date()
+        created_at: new Date(),
       });
+
       return res.status(201).json({ status: true });
     } else {
       return res
@@ -78,6 +95,7 @@ const createMessage = async (req, res) => {
     });
   }
 };
+
 // thay đổi trạng thái is-seen
 export const updateIsRead = async (req, res) => {
   try {
@@ -345,20 +363,33 @@ ORDER BY last_message_time DESC;
 };
 // xửa tin nhắn
 const editMessage = async (req, res) => {
-  const { messageId } = req.params;  // Lấy messageId từ URL
-  const { newText } = req.body;      // Lấy nội dung tin nhắn mới từ request body
-  const userId = req.user.id;        // Giả sử bạn đã có `userId` từ session hoặc JWT
+  const { messageId } = req.params; // Lấy messageId từ URL
+  const { newText } = req.body; // Lấy nội dung tin nhắn mới từ request body
+  const userId = req.user.id; // Giả sử bạn đã có `userId` từ session hoặc JWT
 
   try {
-      const isUpdated = await Message.updateMessageById(userId, messageId, newText);
+    const isUpdated = await Message.updateMessageById(
+      userId,
+      messageId,
+      newText
+    );
 
-      if (isUpdated) {
-          res.status(200).json({ success: true, message: "Message updated successfully" });
-      } else {
-          res.status(403).json({ success: false, message: "You are not authorized to edit this message" });
-      }
+    if (isUpdated) {
+      res
+        .status(200)
+        .json({ success: true, message: "Message updated successfully" });
+    } else {
+      res.status(403).json({
+        success: false,
+        message: "You are not authorized to edit this message",
+      });
+    }
   } catch (error) {
-      res.status(500).json({ success: false, message: "Error updating message", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Error updating message",
+      error: error.message,
+    });
   }
 };
 // kiểm tra cặp khoá đã tồn tại chưa
