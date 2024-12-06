@@ -128,10 +128,8 @@ const editPost = async (req, res) => {
     // Xử lý media nếu có tệp tải lên mới
     // if (files.length > 0) {
     // Xóa media cũ liên quan đến bài viết
-    console.log(">>>>:", is_media_changed);
 
     if (is_media_changed == "true") {
-      console.log("123231232323");
 
       await pool.execute(`DELETE FROM PostMedia WHERE post_id = ?`, [post_id]);
 
@@ -236,7 +234,6 @@ const listPost = async (req, res) => {
 
     // Đợi tất cả các promise media hoàn thành
     const postsWithMedia = await Promise.all(mediaPromises);
-    console.log("dataaaaaa postttttt:", mediaPromises);
 
     // Gửi phản hồi thành công với dữ liệu bài viết đã bao gồm media
     res.status(200).json({

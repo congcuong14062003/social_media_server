@@ -42,6 +42,18 @@ class Users {
     }
   }
 
+  static async getIdByEmail(email, type_account) {
+    try {
+      const getUserByIdQuery =
+        "SELECT user_id FROM Users WHERE user_email = ? AND type_account = ?";
+      const [result] = await pool.execute(getUserByIdQuery, [email, type_account]);
+      return result[0];
+    } catch (error) {
+      console.log(error.message);
+      return error;
+    }
+  }
+
   // tìm người dùng
   static async login(email, password, type_account) {
     try {

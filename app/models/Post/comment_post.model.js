@@ -157,7 +157,6 @@ class PostComment {
     }
   }
   static async updateCommentHeart(comment_id) {
-    console.log("Vàoooo");
     try {
       const query =
         "UPDATE PostComment SET count_comment_heart = count_comment_heart + 1 WHERE comment_id = ?";

@@ -144,7 +144,6 @@ const deleteSubCommentPost = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    
     res.status(500).json({
       status: false,
       message: "An error occurred, please try again later",

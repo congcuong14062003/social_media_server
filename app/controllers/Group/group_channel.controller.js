@@ -133,7 +133,6 @@ const updateGroup = async (req, res) => {
     const { group_name, group_slogan, group_privacy } = req.body;
     let avatar_media_link = null;
     let cover_media_link = null;
-    console.log(group_name, group_slogan, group_privacy);
 
     if (!groupId) {
       return res.status(400).json({

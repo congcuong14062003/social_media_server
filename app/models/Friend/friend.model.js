@@ -228,8 +228,6 @@ ORDER BY pm.created_at DESC;
         user_id,
         my_id,
       ]);
-      console.log(rows);
-
       return rows[0].count > 0; // Trả về true nếu có ít nhất một bản ghi
     } catch (error) {
       console.error("Database error:", error);
@@ -331,7 +329,6 @@ ORDER BY pm.created_at DESC;
   // chấp nhận lời mời
   static async AcceptFriendById(id_user, friend_id) {
     try {
-      // console.log(id_user, friend_id);
       const add_friend =
         "update friend set relationship_status = 1 where requestor_id = ? and receiver_id = ?";
       const [rows] = await pool.execute(add_friend, [id_user, friend_id, 0]);

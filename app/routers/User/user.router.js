@@ -16,7 +16,7 @@ import { Authorization } from "../../middleware/authorization_token.js";
 import express, { Router } from "express";
 import multer from "multer";
 import { getUserSettingById, updateUserSetting } from "../../controllers/User/user_setting.controller.js";
-import { createUserFaceData, deleteUserFaceData, getAllUserFaceData, getUserFaceDataById, loginUserFaceData } from "../../controllers/User/user_face_recognition.controller.js";
+import { createUserFaceData, deleteUserFaceData, getAllUserFaceDataByUserIDEncode, getUserFaceDataById, loginUserFaceData } from "../../controllers/User/user_face_recognition.controller.js";
 const router = express.Router();
 const storage = multer.memoryStorage(); // Bạn có thể thay đổi sang multer.diskStorage() nếu cần
 const upload = multer({ storage });
@@ -56,15 +56,13 @@ export default function UserRouter(router = Router()) {
     Authorization,
     getUserFaceDataById
   );
-  router.get("/get-all-face-recognition", getAllUserFaceData);
+  router.post("/get-all-face-recognition-by-id", getAllUserFaceDataByUserIDEncode);
   router.delete(
     "/delete-face-recognition/",
     Authentication,
     Authorization,
     deleteUserFaceData
   );
-
-
   //infor user
   router.get(
     "/info-profile/",
