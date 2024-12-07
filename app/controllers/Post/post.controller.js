@@ -255,19 +255,20 @@ const getPostById = async (req, res) => {
   try {
     // Lấy thông tin chi tiết của bài viết
     const post = await Post.getPostById(post_id);
-    const postGroup = await GroupPost.getGroupPostAcceptedByPostId(
-      post_id
-    ); // Chỉ lấy bài viết nhóm đã duyệt
-    const infor_group = postGroup
-      ? await GroupChannel.getGroupByGroupId(postGroup?.group_id)
-      : null;
+
     // Nếu không tìm thấy bài viết, trả về 404
     if (!post) {
       return res.status(404).json({
         status: false,
-        message: "Bài viết không tồn tại hoặc đã bị xoá",
+        message: "Bài viết không tồn tại hoặc đã bị xóa",
       });
     }
+
+    // Lấy thông tin nhóm nếu bài viết thuộc nhóm và đã được duyệt
+    const postGroup = await GroupPost.getGroupPostAcceptedByPostId(post_id);
+    const infor_group = postGroup
+      ? await GroupChannel.getGroupByGroupId(postGroup?.group_id)
+      : null;
 
     // Lấy danh sách media cho bài viết
     const media = await PostMedia.getAllMediaByPostId(post_id);
@@ -285,18 +286,21 @@ const getPostById = async (req, res) => {
     };
 
     // Trả về phản hồi thành công với chi tiết bài viết
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       data: postWithDetails,
     });
   } catch (error) {
     console.error("Error fetching post details:", error);
-    res.status(500).json({
+
+    // Trả về lỗi server nếu xảy ra vấn đề bất thường
+    return res.status(500).json({
       status: false,
-      message: "An error occurred, please try again later",
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau",
     });
   }
 };
+
 
 const listPostById = async (req, res) => {
   const my_id = req.body?.data?.user_id ?? null; // Lấy user_id từ request body

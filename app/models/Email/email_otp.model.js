@@ -15,7 +15,7 @@ class EmailOTP {
   async create(type) {
     try {
       const createdAt = new Date(); // Thời gian tạo là thời gian hiện tại
-      const otpExpiration = new Date(createdAt.getTime() + 20 * 1000); // Thời gian hết hạn là 20 giây sau thời gian tạo
+      const otpExpiration = new Date(createdAt.getTime() + 1 * 60 * 1000); // Thời gian hết hạn là 1 phút sau thời gian tạo
   
       const createOTPQuery =
         "INSERT INTO EmailOTP (user_email, otp_code, otp_expiration, is_verified, created_at) VALUES (?, ?, ?, ?, ?);";

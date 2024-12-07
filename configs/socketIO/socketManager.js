@@ -60,75 +60,6 @@ const initializeSocket = (httpServer, users) => {
         io.emit("message_deleted", { messageId });
       });
 
-      // Sự kiện comment bài viết
-      socket.on("sendComment", async (data) => {
-        const { sender_id, receiver_id, content, link_notice, created_at } =
-          data;
-        const receiverSocketId = getSocketIdByUserId(receiver_id, users);
-
-        const newNotice = new Notice({
-          sender_id,
-          receiver_id,
-          content,
-          link_notice,
-          created_at,
-        });
-
-        try {
-          const isCreated = await newNotice.create(); // Lưu thông báo vào DB
-          if (isCreated) {
-            console.log(`Lưu thông báo cho người nhận: ${receiver_id}`);
-          }
-        } catch (error) {
-          console.error("Lỗi khi lưu thông báo bình luận:", error);
-        }
-
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("receiver_notify", {
-            sender_id,
-            receiver_id,
-            content,
-            link_notice,
-            created_at,
-          });
-        }
-      });
-
-      // Sự kiện trả lời bình luận
-      socket.on("sendSubComment", async (data) => {
-        console.log("Có người mới trả lời bình luận của bạn:", data);
-        const { sender_id, receiver_id, content, link_notice, created_at } =
-          data;
-        const receiverSocketId = getSocketIdByUserId(receiver_id, users);
-
-        const newNotice = new Notice({
-          sender_id,
-          receiver_id,
-          content,
-          link_notice,
-          created_at,
-        });
-
-        try {
-          const isCreated = await newNotice.create(); // Lưu thông báo vào DB
-          if (isCreated) {
-            console.log(`Lưu thông báo cho người nhận: ${receiver_id}`);
-          }
-        } catch (error) {
-          console.error("Lỗi khi lưu thông báo bình luận:", error);
-        }
-
-        if (receiverSocketId) {
-          io.to(receiverSocketId).emit("receiver_notify", {
-            sender_id,
-            receiver_id,
-            content,
-            link_notice,
-            created_at,
-          });
-        }
-      });
-
       // Sự kiện đăng bài viết
       socket.on("new_post", async (data) => {
         console.log("aaaaaaa:", data);
@@ -258,6 +189,75 @@ const initializeSocket = (httpServer, users) => {
                 );
               }
             }
+          });
+        }
+      });
+
+      // Sự kiện comment bài viết
+      socket.on("sendComment", async (data) => {
+        const { sender_id, receiver_id, content, link_notice, created_at } =
+          data;
+        const receiverSocketId = getSocketIdByUserId(receiver_id, users);
+
+        const newNotice = new Notice({
+          sender_id,
+          receiver_id,
+          content,
+          link_notice,
+          created_at,
+        });
+
+        try {
+          const isCreated = await newNotice.create(); // Lưu thông báo vào DB
+          if (isCreated) {
+            console.log(`Lưu thông báo cho người nhận: ${receiver_id}`);
+          }
+        } catch (error) {
+          console.error("Lỗi khi lưu thông báo bình luận:", error);
+        }
+
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("receiver_notify", {
+            sender_id,
+            receiver_id,
+            content,
+            link_notice,
+            created_at,
+          });
+        }
+      });
+
+      // Sự kiện trả lời bình luận
+      socket.on("sendSubComment", async (data) => {
+        console.log("Có người mới trả lời bình luận của bạn:", data);
+        const { sender_id, receiver_id, content, link_notice, created_at } =
+          data;
+        const receiverSocketId = getSocketIdByUserId(receiver_id, users);
+
+        const newNotice = new Notice({
+          sender_id,
+          receiver_id,
+          content,
+          link_notice,
+          created_at,
+        });
+
+        try {
+          const isCreated = await newNotice.create(); // Lưu thông báo vào DB
+          if (isCreated) {
+            console.log(`Lưu thông báo cho người nhận: ${receiver_id}`);
+          }
+        } catch (error) {
+          console.error("Lỗi khi lưu thông báo bình luận:", error);
+        }
+
+        if (receiverSocketId) {
+          io.to(receiverSocketId).emit("receiver_notify", {
+            sender_id,
+            receiver_id,
+            content,
+            link_notice,
+            created_at,
           });
         }
       });
