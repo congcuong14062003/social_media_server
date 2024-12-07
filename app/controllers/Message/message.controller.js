@@ -11,33 +11,42 @@ const createMessage = async (req, res) => {
     const files = req.files || {};
     const user_id = (req.body?.sender_id || req.body?.data?.user_id) ?? null;
     const friend_id = req.params?.id ?? null;
-    let content_text = (req.body?.content_text).toString() ?? "";
+    let content_text = req.body?.content_text?.toString() || "";
     const content_type = req.body?.content_type ?? "";
     const reply_id = req.body?.reply_id ?? null;
     const name_file = req.body?.name_file ?? "";
 
+    // Kiểm tra nếu bạn bè chưa thiết lập khóa
     const friendHasKey = await UserKeyPair.getKeyPair(friend_id);
     if (!friendHasKey) {
       return res.status(401).json({
         status: false,
-        message: "Bạn bè chưa thiết lập tin nhắn vui lòng thử lại sau",
+        message: "Bạn bè chưa thiết lập tin nhắn, vui lòng thử lại sau.",
       });
     }
 
+    // Xử lý nếu có file được tải lên
     if (files.length > 0) {
-      content_text = (
-        await uploadFile(files[0], process.env.NAME_FOLDER_MESSENGER)
-      )?.url;
+      const uploadedFile = await uploadFile(files[0], process.env.NAME_FOLDER_MESSENGER);
+      if (uploadedFile?.url) {
+        content_text = uploadedFile.url;
+      } else {
+        return res.status(500).json({
+          status: false,
+          message: "Tải lên tệp thất bại, vui lòng thử lại.",
+        });
+      }
     }
 
-    // Check for missing required fields
+    // Kiểm tra tính hợp lệ của dữ liệu đầu vào
     if (!user_id || !friend_id || !content_text) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Dữ liệu nhập vào không hợp lệ" });
+      return res.status(400).json({
+        status: false,
+        message: "Dữ liệu nhập vào không hợp lệ.",
+      });
     }
 
-    // Create a new message instance
+    // Tạo tin nhắn mới
     const newMessage = new Message({
       sender_id: user_id,
       receiver_id: friend_id,
@@ -47,54 +56,49 @@ const createMessage = async (req, res) => {
       created_at: new Date(),
     });
 
-    // Lấy thông tin của người gửi và người nhận
-    const inforSender = await Users.getById(user_id);
-    const sender_avatar = await ProfileMedia.getLatestAvatarById(user_id);
-
-
-    const inforReceiver = await Users.getById(friend_id);
-    const receiver_avatar = await ProfileMedia.getLatestAvatarById(friend_id);
-
-    // Attempt to create the message in the database
     const result = await newMessage.create(content_text);
-
-    // Respond based on the result of the message creation
-    if (result) {
-      // Khi bạn là người gửi (sender_id là user_id), hiển thị thông tin của người bạn (người nhận tin nhắn)
-
-      // Gửi tin nhắn cho cả người gửi và người nhận
-      io.to([
-        getSocketIdByUserId(friend_id, users),
-        getSocketIdByUserId(user_id, users),
-      ]).emit("receiveMessage", {
-        messenger_id: result,
-        sender_id: user_id,
-        receiver_id: friend_id,
-        content_text: content_text,
-        content_type: content_type,
-        name_file: name_file,
-        // user_name: inforSender?.user_name,
-        // user_avatar: sender_avatar,
-        // friend_name: inforReceiver?.user_name,
-        // friend_avatar: receiver_avatar,
-        reply_id: reply_id,
-        created_at: new Date(),
+    if (!result) {
+      return res.status(500).json({
+        status: false,
+        message: "Không thể tạo tin nhắn, vui lòng thử lại.",
       });
-
-      return res.status(201).json({ status: true });
-    } else {
-      return res
-        .status(500)
-        .json({ status: false, message: "Failed to create message" });
     }
+
+    // Gửi tin nhắn đến người nhận và người gửi
+    const friendSocketIds = getSocketIdByUserId(friend_id, users);
+    const senderSocketIds = getSocketIdByUserId(user_id, users);
+
+    const messageData = {
+      messenger_id: result,
+      sender_id: user_id,
+      receiver_id: friend_id,
+      content_text: content_text,
+      content_type: content_type,
+      name_file: name_file,
+      reply_id: reply_id,
+      created_at: new Date(),
+    };
+
+    // Gửi đến tất cả socket của người nhận
+    friendSocketIds.forEach((socketId) => {
+      io.to(socketId).emit("receiveMessage", messageData);
+    });
+
+    // Gửi đến tất cả socket của người gửi
+    senderSocketIds.forEach((socketId) => {
+      io.to(socketId).emit("receiveMessage", messageData);
+    });
+
+    return res.status(201).json({ status: true });
   } catch (error) {
-    console.error(error.message);
+    console.error("Error in createMessage:", error.message);
     return res.status(500).json({
       status: false,
-      message: "An error occurred, please try again later",
+      message: "Đã xảy ra lỗi, vui lòng thử lại sau.",
     });
   }
 };
+
 
 // thay đổi trạng thái is-seen
 export const updateIsRead = async (req, res) => {

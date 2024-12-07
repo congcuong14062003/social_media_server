@@ -653,32 +653,61 @@ const initializeSocket = (httpServer, users) => {
 };
 
 // Hàm thêm người dùng
+// const addUser = (socketId, userId, users) => {
+//   const existingUser = users.find((user) => user.userId === userId);
+//   if (existingUser) {
+//     existingUser.socketId = socketId; // Cập nhật socketId nếu đã tồn tại
+//   } else {
+//     users.push({ socketId, userId }); // Thêm người dùng mới
+//   }
+// };
 const addUser = (socketId, userId, users) => {
   const existingUser = users.find((user) => user.userId === userId);
   if (existingUser) {
-    existingUser.socketId = socketId; // Cập nhật socketId nếu đã tồn tại
+    // Thêm socketId nếu chưa tồn tại
+    if (!existingUser.sockets.includes(socketId)) {
+      existingUser.sockets.push(socketId);
+    }
   } else {
-    users.push({ socketId, userId }); // Thêm người dùng mới
+    // Thêm người dùng mới
+    users.push({ userId, sockets: [socketId] });
   }
 };
 
 // Hàm xóa người dùng
+// const removeUser = (socketId, users) => {
+//   const userIndex = users.findIndex((user) => user.socketId === socketId);
+//   if (userIndex !== -1) {
+//     users.splice(userIndex, 1); // Xóa người dùng khỏi mảng
+//   }
+// };
 const removeUser = (socketId, users) => {
-  const userIndex = users.findIndex((user) => user.socketId === socketId);
+  const userIndex = users.findIndex((user) => user.sockets.includes(socketId));
   if (userIndex !== -1) {
-    users.splice(userIndex, 1); // Xóa người dùng khỏi mảng
+    const user = users[userIndex];
+    // Xóa socketId
+    user.sockets = user.sockets.filter((id) => id !== socketId);
+
+    // Nếu không còn socketId nào, xóa người dùng
+    if (user.sockets.length === 0) {
+      users.splice(userIndex, 1);
+    }
   }
 };
 
 // Hàm lấy socketId theo userId
+// const getSocketIdByUserId = (userId, users) => {
+//   const user = users.find((user) => user.userId === userId);
+//   return user ? user.socketId : null; // Trả về socketId nếu tìm thấy, nếu không trả về null
+// };
 const getSocketIdByUserId = (userId, users) => {
   const user = users.find((user) => user.userId === userId);
-  return user ? user.socketId : null; // Trả về socketId nếu tìm thấy, nếu không trả về null
+  return user ? user.sockets : []; // Trả về mảng socketId hoặc mảng rỗng
 };
 
 // Hàm lấy tất cả người dùng online
 const getAllOnlineUsers = (users) => {
-  return users.map((user) => user.userId);
+  return [...new Set(users.map((user) => user.userId))]; // Loại bỏ trùng lặp
 };
 
 export {
