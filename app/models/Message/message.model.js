@@ -169,6 +169,56 @@ class Message {
       throw error;
     }
   }
+  static async getLastMessage(sender_id, receiver_id) {
+    console.log("sender: ", sender_id, receiver_id);
+
+    try {
+      const query = `
+        SELECT * 
+        FROM PrivateMessage
+        WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `;
+      const [rows] = await pool.execute(query, [
+        sender_id,
+        receiver_id,
+        receiver_id,
+        sender_id,
+      ]);
+      return rows[0]; // Tin nhắn gần nhất
+    } catch (error) {
+      console.error("Error getting last message: ", error);
+      throw error;
+    }
+  }
+  // hàm lấy ra tin nhắn cuối cùng được giải mã bởi chính mình
+  static async getLastMessageByOwner(sender_id, receiver_id) {
+    try {
+      const query = `
+       SELECT * 
+        FROM PrivateMessage
+        WHERE (
+            (sender_id = ? AND receiver_id = ?) 
+            OR 
+            (sender_id = ? AND receiver_id = ?)
+        ) 
+        AND (content_text_encrypt_by_owner IS NOT NULL AND content_text_encrypt IS NOT NULL)
+        ORDER BY created_at DESC
+        limit 1
+      `;
+      const [rows] = await pool.execute(query, [
+        sender_id,
+        receiver_id,
+        receiver_id,
+        sender_id,
+      ]);
+      return rows[0]; // Returning the last valid message
+    } catch (error) {
+      console.error("Error getting last message by owner: ", error);
+      throw error;
+    }
+  }
 
   // Sửa hàm deleteMessageByMessageID
   static async deleteMessageByMessageID(user_id, messenger_id) {

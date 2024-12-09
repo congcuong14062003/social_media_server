@@ -54,14 +54,14 @@ export default function MessageRouter(router = Router()) {
     deleteAllMessenger
   );
 
-  router.delete(
+  router.post(
     "/delete-messenger/:messenger_id",
     Authentication,
     Authorization,
     deleteMessenger
   );
 
-  router.delete(
+  router.post(
     "/delete-messenger-by-owner-side/:messenger_id",
     Authentication,
     Authorization,

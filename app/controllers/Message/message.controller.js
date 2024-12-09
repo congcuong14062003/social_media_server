@@ -27,7 +27,10 @@ const createMessage = async (req, res) => {
 
     // Xử lý nếu có file được tải lên
     if (files.length > 0) {
-      const uploadedFile = await uploadFile(files[0], process.env.NAME_FOLDER_MESSENGER);
+      const uploadedFile = await uploadFile(
+        files[0],
+        process.env.NAME_FOLDER_MESSENGER
+      );
       if (uploadedFile?.url) {
         content_text = uploadedFile.url;
       } else {
@@ -98,7 +101,6 @@ const createMessage = async (req, res) => {
     });
   }
 };
-
 
 // thay đổi trạng thái is-seen
 export const updateIsRead = async (req, res) => {
@@ -199,6 +201,8 @@ const deleteMessenger = async (req, res) => {
   try {
     const user_id = req.body?.data?.user_id;
     const messenger_id = req.params?.messenger_id;
+    const receiver_id = req.body?.receiver_id;
+    const private_key = req.body?.private_key; // Assuming the private key is passed in the request
     if (!user_id) {
       return res
         .status(400)
@@ -217,7 +221,41 @@ const deleteMessenger = async (req, res) => {
       });
     }
 
-    return res.status(200).json({ status: true });
+    // Lấy tin nhắn cuối cùng sau khi xóa
+    const lastMessage = await Message.getLastMessage(user_id, receiver_id);
+
+    if (lastMessage) {
+      let content_text = "Encrypted message"; // Default content for encrypted message
+
+      // Giải mã tin nhắn cuối cùng
+      if (lastMessage.sender_id === user_id) {
+        // Tin nhắn gửi bởi người dùng, sử dụng khóa riêng của người nhận
+        content_text = decryptWithPrivateKey(
+          lastMessage.content_text_encrypt_by_owner,
+          private_key
+        );
+      } else if (lastMessage.sender_id === receiver_id) {
+        // Tin nhắn gửi bởi bạn bè, sử dụng khóa riêng của người dùng
+        content_text = decryptWithPrivateKey(
+          lastMessage.content_text_encrypt,
+          private_key
+        );
+      }
+
+      // Gửi tin nhắn cuối cùng đã giải mã
+      return res.status(200).json({
+        status: true,
+        lastMessage: {
+          ...lastMessage,
+          content_text, // Gửi tin nhắn cuối cùng đã giải mã
+        },
+      });
+    } else {
+      return res.status(200).json({
+        status: true,
+        lastMessage: null, // Không có tin nhắn cuối cùng
+      });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -232,12 +270,16 @@ const deleteMessengerByOwnerSide = async (req, res) => {
   try {
     const user_id = req.body?.data?.user_id;
     const messenger_id = req.params?.messenger_id;
+    const receiver_id = req.body?.receiver_id;
+    const private_key = req.body?.private_key;
+
     if (!user_id) {
       return res
         .status(400)
         .json({ status: false, message: "Người dùng không tồn tại" });
     }
 
+    // Xóa tin nhắn bên người gửi (owner side)
     const result = await Message.deleteMessageByMessageIDOwnSide(
       user_id,
       messenger_id
@@ -249,7 +291,42 @@ const deleteMessengerByOwnerSide = async (req, res) => {
       });
     }
 
-    return res.status(200).json({ status: true });
+    // Lấy tin nhắn cuối cùng sau khi xóa
+    const lastMessage = await Message.getLastMessageByOwner(
+      user_id,
+      receiver_id
+    );
+
+    let content_text = "Encrypted message"; // Nội dung mặc định cho tin nhắn mã hóa
+
+    if (lastMessage) {
+      if (lastMessage.sender_id === user_id) {
+        // Tin nhắn gửi bởi người dùng, giải mã với khóa riêng của người nhận
+        content_text = decryptWithPrivateKey(
+          lastMessage.content_text_encrypt_by_owner,
+          private_key
+        );
+      } else if (lastMessage.sender_id === receiver_id) {
+        // Tin nhắn gửi bởi bạn bè, giải mã với khóa riêng của người dùng
+        content_text = decryptWithPrivateKey(
+          lastMessage.content_text_encrypt,
+          private_key
+        );
+      }
+
+      return res.status(200).json({
+        status: true,
+        lastMessage: {
+          ...lastMessage,
+          content_text, // Gửi tin nhắn cuối cùng đã giải mã
+        },
+      });
+    } else {
+      return res.status(200).json({
+        status: true,
+        lastMessage: null, // Không có tin nhắn cuối cùng
+      });
+    }
   } catch (error) {
     console.error(error);
     return res.status(500).json({
@@ -258,6 +335,7 @@ const deleteMessengerByOwnerSide = async (req, res) => {
     });
   }
 };
+
 const getAllConversations = async (req, res) => {
   try {
     const user_id = req.body?.data?.user_id ?? null;
@@ -326,13 +404,13 @@ ORDER BY last_message_time DESC;
       conversations.map(async (conv) => {
         let content_text = "Encrypted message";
 
-        // Giải mã tin nhắn cuối cùng của bạn bè
-        if (conv.sender_id === user_id) {
+        // Giải mã tin nhắn cuối cùng của bạn bè, kiểm tra nếu trường có giá trị hợp lệ
+        if (conv.sender_id === user_id && conv.content_text_encrypt_by_owner) {
           content_text = decryptWithPrivateKey(
             conv.content_text_encrypt_by_owner,
             private_key
           );
-        } else {
+        } else if (conv.content_text_encrypt) {
           content_text = decryptWithPrivateKey(
             conv.content_text_encrypt,
             private_key
