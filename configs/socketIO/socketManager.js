@@ -63,36 +63,26 @@ const initializeSocket = (httpServer, users) => {
       socket.on("message_delete", (data) => {
         const { messageId, senderId, receiverId, preLastMessage } = data;
 
-        // Nếu xóa tin nhắn chỉ ở phía người gửi (bạn), chỉ cần phát tới các socket của người gửi
-        if (receiverId === undefined) {
-          const senderSockets = getSocketIdByUserId(senderId, users);
-          if (senderSockets.length > 0) {
-            senderSockets.forEach((socketId) => {
-              io.to(socketId).emit("message_deleted_owner", { messageId });
-            });
-          }
-        } else {
-          // Nếu xóa tin nhắn cả hai phía, phát sự kiện tới cả người gửi và người nhận
-          const senderSockets = getSocketIdByUserId(senderId, users);
-          const receiverSockets = getSocketIdByUserId(receiverId, users);
+        // Nếu xóa tin nhắn cả hai phía, phát sự kiện tới cả người gửi và người nhận
+        const senderSockets = getSocketIdByUserId(senderId, users);
+        const receiverSockets = getSocketIdByUserId(receiverId, users);
 
-          if (senderSockets.length > 0) {
-            senderSockets.forEach((socketId) => {
-              io.to(socketId).emit("message_deleted", {
-                messageId,
-                preLastMessage,
-              });
+        if (senderSockets.length > 0) {
+          senderSockets.forEach((socketId) => {
+            io.to(socketId).emit("message_deleted", {
+              messageId,
+              preLastMessage,
             });
-          }
+          });
+        }
 
-          if (receiverSockets.length > 0) {
-            receiverSockets.forEach((socketId) => {
-              io.to(socketId).emit("message_deleted", {
-                messageId,
-                preLastMessage,
-              });
+        if (receiverSockets.length > 0) {
+          receiverSockets.forEach((socketId) => {
+            io.to(socketId).emit("message_deleted", {
+              messageId,
+              preLastMessage,
             });
-          }
+          });
         }
       });
 
@@ -632,7 +622,6 @@ const initializeSocket = (httpServer, users) => {
       // Lắng nghe có sự kiện mời vào cuộc gọi
       socket.on("callUser", (data) => {
         const receiverSocketIds = getSocketIdByUserId(data?.receiver_id, users); // Lấy tất cả socketId của người nhận
-
         if (receiverSocketIds.length > 0) {
           receiverSocketIds.forEach((socketId) => {
             io.to(socketId).emit("user-calling", data); // Gửi thông báo đến tất cả socketId của người nhận

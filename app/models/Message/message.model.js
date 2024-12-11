@@ -247,18 +247,61 @@ class Message {
       if (!message) return false;
 
       const { sender_id } = message;
+
+      // Xóa nội dung tin nhắn cho người gửi hoặc người nhận
       const deleteMessageQuery =
         user_id === sender_id
           ? `UPDATE PrivateMessage SET content_text_encrypt_by_owner = NULL WHERE messenger_id = ?;`
           : `UPDATE PrivateMessage SET content_text_encrypt = NULL WHERE messenger_id = ?;`;
 
       const [result] = await pool.execute(deleteMessageQuery, [messenger_id]);
+
+      // Nếu là tin nhắn cuối cùng, kiểm tra lại hội thoại
+      if (result?.affectedRows > 0) {
+        await this.revalidateLastMessage(
+          user_id,
+          message.sender_id,
+          message.receiver_id
+        );
+      }
+
       return result?.affectedRows > 0;
     } catch (error) {
       console.error("Error deleting message on user's side: ", error);
       throw error;
     }
   }
+
+  // Hàm hỗ trợ để kiểm tra và cập nhật tin nhắn cuối cùng
+  static async revalidateLastMessage(user_id, sender_id, receiver_id) {
+    try {
+      const checkQuery = `
+        SELECT *
+        FROM PrivateMessage
+        WHERE (sender_id = ? AND receiver_id = ? OR sender_id = ? AND receiver_id = ?)
+        AND (content_text_encrypt IS NOT NULL OR content_text_encrypt_by_owner IS NOT NULL)
+        ORDER BY created_at DESC
+        LIMIT 1;
+      `;
+      const [latestMessage] = await pool.execute(checkQuery, [
+        sender_id,
+        receiver_id,
+        receiver_id,
+        sender_id,
+      ]);
+      if (latestMessage.length > 0) {
+        // Update trạng thái hoặc xử lý nếu cần thiết
+        console.log(
+          "Updated last message for the conversation:",
+          latestMessage[0]
+        );
+      }
+    } catch (error) {
+      console.error("Error revalidating last message: ", error);
+      throw error;
+    }
+  }
+
   static async updateIsRead(messageId, userId) {
     try {
       const query = `

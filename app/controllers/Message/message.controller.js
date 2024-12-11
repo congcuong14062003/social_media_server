@@ -290,7 +290,7 @@ const deleteMessengerByOwnerSide = async (req, res) => {
         message: "Không tìm thấy hoặc không thể xóa tin nhắn",
       });
     }
-
+    // return res.status(200).json({ status: true });
     // Lấy tin nhắn cuối cùng sau khi xóa
     const lastMessage = await Message.getLastMessageByOwner(
       user_id,
@@ -371,8 +371,9 @@ FROM (
     pm.created_at = (
       SELECT MAX(created_at) 
       FROM PrivateMessage 
-      WHERE (sender_id = pm.sender_id AND receiver_id = pm.receiver_id) OR 
-            (sender_id = pm.receiver_id AND receiver_id = pm.sender_id)
+      WHERE ((sender_id = pm.sender_id AND receiver_id = pm.receiver_id) OR 
+             (sender_id = pm.receiver_id AND receiver_id = pm.sender_id))
+      AND (content_text_encrypt IS NOT NULL OR content_text_encrypt_by_owner IS NOT NULL)
     )
 ) AS msg
 JOIN users u 
@@ -405,16 +406,17 @@ ORDER BY last_message_time DESC;
         let content_text = "Encrypted message";
 
         // Giải mã tin nhắn cuối cùng của bạn bè, kiểm tra nếu trường có giá trị hợp lệ
-        if (conv.sender_id === user_id && conv.content_text_encrypt_by_owner) {
-          content_text = decryptWithPrivateKey(
-            conv.content_text_encrypt_by_owner,
-            private_key
-          );
-        } else if (conv.content_text_encrypt) {
-          content_text = decryptWithPrivateKey(
-            conv.content_text_encrypt,
-            private_key
-          );
+        if (conv.sender_id === user_id) {
+          content_text = conv.content_text_encrypt_by_owner
+            ? decryptWithPrivateKey(
+                conv.content_text_encrypt_by_owner,
+                private_key
+              )
+            : "Tin nhắn đã bị gỡ";
+        } else {
+          content_text = conv.content_text_encrypt
+            ? decryptWithPrivateKey(conv.content_text_encrypt, private_key)
+            : "Tin nhắn đã bị gỡ";
         }
 
         return {
