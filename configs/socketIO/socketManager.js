@@ -28,6 +28,7 @@ const initializeSocket = (httpServer, users) => {
         );
         // Gửi danh sách online hiện tại cho tất cả người dùng
         io.emit("onlineUsers", getAllOnlineUsers(users));
+        setBusyStatus(data?.user_id, false, users);
       });
       // Lắng nghe sự kiện khi người dùng logout
       socket.on("userDisconnected", (data) => {
@@ -620,14 +621,41 @@ const initializeSocket = (httpServer, users) => {
       });
 
       // Lắng nghe có sự kiện mời vào cuộc gọi
+      // socket.on("callUser", (data) => {
+      //   const receiverSocketIds = getSocketIdByUserId(data?.receiver_id, users); // Lấy tất cả socketId của người nhận
+      //   if (receiverSocketIds.length > 0) {
+      //     receiverSocketIds.forEach((socketId) => {
+      //       io.to(socketId).emit("user-calling", data); // Gửi thông báo đến tất cả socketId của người nhận
+      //     });
+      //   } else {
+      //     console.error(`No socket found for user ID: ${data?.receiver_id}`);
+      //   }
+      // });
+
+      // Lắng nghe sự kiện kiểm tra trạng thái "bận"
+      socket.on("checkUserBusy", (data, callback) => {
+        const { receiver_id } = data;
+        const user = users.find((user) => user.userId === receiver_id);
+        const isBusy = user ? user.isBusy : false;
+        callback({ isBusy, exists: !!user }); // Trả về thông tin đầy đủ hơn
+      });
+
+      // Lắng nghe sự kiện khi người dùng bắt đầu cuộc gọi
       socket.on("callUser", (data) => {
-        const receiverSocketIds = getSocketIdByUserId(data?.receiver_id, users); // Lấy tất cả socketId của người nhận
-        if (receiverSocketIds.length > 0) {
-          receiverSocketIds.forEach((socketId) => {
-            io.to(socketId).emit("user-calling", data); // Gửi thông báo đến tất cả socketId của người nhận
+        const { receiver_id, sender_id } = data;
+
+        if (getUserBusyStatus(receiver_id, users)) {
+          io.to(socket.id).emit("userBusy", {
+            message: "Người dùng này đang trong cuộc gọi khác.",
           });
         } else {
-          console.error(`No socket found for user ID: ${data?.receiver_id}`);
+          setBusyStatus(receiver_id, true, users);
+          setBusyStatus(sender_id, true, users);
+
+          const receiverSockets = getSocketIdByUserId(receiver_id, users);
+          receiverSockets.forEach((socketId) => {
+            io.to(socketId).emit("user-calling", data);
+          });
         }
       });
 
@@ -655,29 +683,51 @@ const initializeSocket = (httpServer, users) => {
           );
         }
         if (status === "Accepted") {
-          // io.to(sender_id).emit('statusAcceptedCallUser', { status: 'Accepted' });
-          io.emit("user_busy", { status: "Accepted", sender_id, receiver_id });
+          setBusyStatus(receiver_id, true, users);
+        } else {
+          setBusyStatus(receiver_id, false, users);
         }
       });
 
       // Lắng nghe sự kiện kết thúc cuộc gọi
+      // socket.on("endCall", (data) => {
+      //   const { receiver_id, sender_id } = data;
+
+      //   // Tìm socketId của cả người nhận và người gọi
+      //   const receiverSocketIds = getSocketIdByUserId(receiver_id, users);
+      //   const senderSocketIds = getSocketIdByUserId(sender_id, users);
+
+      //   // Gửi sự kiện "callEnded" đến tất cả socketId của người nhận và người gọi
+      //   receiverSocketIds.forEach((socketId) => {
+      //     io.to(socketId).emit("callEnded", { message: "The call has ended." });
+      //   });
+
+      //   senderSocketIds.forEach((socketId) => {
+      //     io.to(socketId).emit("callEnded", { message: "The call has ended." });
+      //   });
+
+      //   // In ra thông báo về việc kết thúc cuộc gọi
+      //   console.log(`Call ended between user ${sender_id} and ${receiver_id}`);
+      // });
+      // Khi cuộc gọi kết thúc, xóa trạng thái bận
+      // Lắng nghe sự kiện khi kết thúc cuộc gọi
       socket.on("endCall", (data) => {
         const { receiver_id, sender_id } = data;
 
-        // Tìm socketId của cả người nhận và người gọi
-        const receiverSocketIds = getSocketIdByUserId(receiver_id, users);
-        const senderSocketIds = getSocketIdByUserId(sender_id, users);
+        setBusyStatus(receiver_id, false, users);
+        setBusyStatus(sender_id, false, users);
 
-        // Gửi sự kiện "callEnded" đến tất cả socketId của người nhận và người gọi
-        receiverSocketIds.forEach((socketId) => {
+        const receiverSockets = getSocketIdByUserId(receiver_id, users);
+        const senderSockets = getSocketIdByUserId(sender_id, users);
+
+        receiverSockets.forEach((socketId) => {
           io.to(socketId).emit("callEnded", { message: "The call has ended." });
         });
 
-        senderSocketIds.forEach((socketId) => {
+        senderSockets.forEach((socketId) => {
           io.to(socketId).emit("callEnded", { message: "The call has ended." });
         });
 
-        // In ra thông báo về việc kết thúc cuộc gọi
         console.log(`Call ended between user ${sender_id} and ${receiver_id}`);
       });
 
@@ -705,6 +755,10 @@ const initializeSocket = (httpServer, users) => {
         }
       });
       socket.on("disconnect", () => {
+        const user = users.find((u) => u.sockets.includes(socket.id));
+        if (user) {
+          setBusyStatus(user.userId, false, users); // Đặt lại trạng thái "bận" khi disconnect
+        }
         removeUser(socket.id, users);
         io.emit("onlineUsers", getAllOnlineUsers(users));
       });
@@ -715,6 +769,7 @@ const initializeSocket = (httpServer, users) => {
 };
 
 // Hàm thêm người dùng
+// Hàm thêm người dùng
 const addUser = (socketId, userId, users) => {
   const existingUser = users.find((user) => user.userId === userId);
   if (existingUser) {
@@ -724,7 +779,7 @@ const addUser = (socketId, userId, users) => {
     }
   } else {
     // Thêm người dùng mới
-    users.push({ userId, sockets: [socketId] });
+    users.push({ userId, sockets: [socketId], isBusy: false });
   }
 };
 
@@ -735,6 +790,7 @@ const addUser = (socketId, userId, users) => {
 //     users.splice(userIndex, 1); // Xóa người dùng khỏi mảng
 //   }
 // };
+// Hàm xóa người dùng
 const removeUser = (socketId, users) => {
   const userIndex = users.findIndex((user) => user.sockets.includes(socketId));
   if (userIndex !== -1) {
@@ -762,6 +818,19 @@ const getSocketIdByUserId = (userId, users) => {
 // Hàm lấy tất cả người dùng online
 const getAllOnlineUsers = (users) => {
   return [...new Set(users.map((user) => user.userId))]; // Loại bỏ trùng lặp
+};
+// Hàm lấy trạng thái bận của người dùng
+const getUserBusyStatus = (userId, users) => {
+  const user = users.find((user) => user.userId === userId);
+  return user ? user.isBusy : false;
+};
+
+// Hàm cập nhật trạng thái bận của người dùng
+const setBusyStatus = (userId, isBusy, users) => {
+  const user = users.find((user) => user.userId === userId);
+  if (user) {
+    user.isBusy = isBusy;
+  }
 };
 
 export {
